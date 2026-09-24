@@ -44,7 +44,10 @@ jobs:
           ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
 
       - name: Logik-Tests
-        run: ./gradlew --no-daemon :app:testReleaseUnitTest --tests '*LogikTest*' 2>&1 | tee -a build.log | tail -25
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:testReleaseUnitTest --tests '*LogikTest*' 2>&1 | tee -a build.log | tail -25
+          grep -h "<testsuite" app/build/test-results/testReleaseUnitTest/*.xml | sed -E 's/.*name="([^"]+)" tests="([0-9]+)" skipped="([0-9]+)" failures="([0-9]+)" errors="([0-9]+)".*/\1: \2 Tests, \4 Fehlschläge, \5 Fehler/'
 
       - name: Fehler zusammenfassen
         if: failure()

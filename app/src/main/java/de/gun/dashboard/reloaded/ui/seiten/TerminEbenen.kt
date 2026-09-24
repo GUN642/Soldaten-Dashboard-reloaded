@@ -313,14 +313,21 @@ fun TerminMaskeEbene(start: MaskeStart) {
 
                 if (t != null) {
                     // ---- Ändern
-                    if (t.eventId != null) GeraeteKalender.aendern(ctx, t.eventId, kalId.ifBlank { null }, felder)
+                    var nativNeu: String? = null
+                    if (t.eventId != null) {
+                        if (kalId.isNotBlank() && kalId != t.quelleId) {
+                            // Kalenderwechsel: im neuen Kalender anlegen, im alten löschen
+                            nativNeu = GeraeteKalender.anlegen(ctx, kalId, felder).toString()
+                            GeraeteKalender.loeschen(ctx, t.eventId)
+                        } else GeraeteKalender.aendern(ctx, t.eventId, null, felder)
+                    }
                     if (eigener != null) {
                         Speicher.aendern { a ->
                             a.copy(kalender = a.kalender.copy(eigene = a.kalender.eigene.map {
                                 if (it.id == eigener.id) it.copy(
                                     titel = titel.trim(), von = s.alsDE(), bis = e.alsDE(), ganztags = ganztags, zeitVon = zv, zeitBis = zb,
                                     ort = ort.trim(), notiz = notiz.trim(), anhaenge = anhaenge, wiederholung = wdhWert,
-                                    kalenderId = kalId, sequence = (it.sequence ?: 0) + 1,
+                                    kalenderId = kalId, sequence = (it.sequence ?: 0) + 1, nativId = nativNeu ?: it.nativId,
                                 ) else it
                             }))
                         }
@@ -331,7 +338,7 @@ fun TerminMaskeEbene(start: MaskeStart) {
                         Speicher.aendern { a -> a.copy(kalender = a.kalender.copy(eigene = a.kalender.eigene + EigenerTermin(
                             id = neueId(), uid = neueId() + "@dienst-cockpit", erstellt = heuteDE(), titel = titel.trim(), von = s.alsDE(),
                             bis = e.alsDE(), ganztags = ganztags, zeitVon = zv, zeitBis = zb, ort = ort.trim(), notiz = notiz.trim(),
-                            anhaenge = anhaenge, kalenderId = kalId, wiederholung = wdhWert, nativId = t.eventId.toString(), nativ = true,
+                            anhaenge = anhaenge, kalenderId = kalId, wiederholung = wdhWert, nativId = nativNeu ?: t.eventId.toString(), nativ = true,
                         ))) }
                     }
                 } else {
