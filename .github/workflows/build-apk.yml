@@ -101,6 +101,7 @@ jobs:
           TAG="v${{ steps.version.outputs.name }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" SoldatenDashboardReloaded-v*.apk --clobber
+            gh release edit "$TAG" --notes "Automatisch gebaut aus ${GITHUB_SHA::7}."
           else
             gh release create "$TAG" SoldatenDashboardReloaded-v*.apk \
               --title "Soldaten Dashboard Reloaded $TAG" \
