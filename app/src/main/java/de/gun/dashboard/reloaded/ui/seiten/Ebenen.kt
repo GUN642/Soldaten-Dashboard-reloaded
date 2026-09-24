@@ -266,6 +266,12 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.0.1" to listOf(
+        "Lehrgänge und Dokumente als Kacheln in zwei Spalten.",
+        "Deutlich kompaktere Eingabefelder in allen Formularen.",
+        "Kalender füllt die ganze Höhe – kein Leerraum mehr unten.",
+        "Uhr und Datum auf HEUTE zentriert.",
+    ),
     "1.0.0" to listOf(
         "Komplett neu als native Android-App (Kotlin, Jetpack Compose).",
         "Nothing-Design mit Punktschrift und Punktraster; Themen Nothing, Nothing hell, Graphit, Aulumu und System, sieben Akzentfarben.",
