@@ -62,6 +62,18 @@ jobs:
           path: app/src/test/snapshots/images/*.png
           if-no-files-found: ignore
 
+      - name: Bildschirmfotos unter eigener Referenz ablegen (nur Entwicklungszweige)
+        if: always() && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+        continue-on-error: true
+        run: |
+          ls app/src/test/snapshots/images/*.png >/dev/null 2>&1 || exit 0
+          mkdir -p /tmp/fotos && cp app/src/test/snapshots/images/*.png /tmp/fotos/
+          cd /tmp/fotos
+          git init -q && git checkout -q -b fotos
+          git -c user.name=ci -c user.email=ci@localhost add -A
+          git -c user.name=ci -c user.email=ci@localhost commit -qm "Bildschirmfotos ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:refs/bildschirmfotos/stand
+
       - name: Version ermitteln
         id: version
         run: |
