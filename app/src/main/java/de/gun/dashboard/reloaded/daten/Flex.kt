@@ -99,3 +99,6 @@ val JsonFormat = Json {
     encodeDefaults = true
     explicitNulls = false
 }
+
+/** Neue Kennung (ohne Android-Abhängigkeit, auch in der Logik nutzbar). */
+fun neueIdLogik(): String = java.util.UUID.randomUUID().toString()

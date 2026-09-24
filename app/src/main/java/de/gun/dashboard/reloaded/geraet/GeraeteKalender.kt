@@ -369,6 +369,14 @@ object GeraeteKalender {
         }
     }
 
+    /** Ursprünglicher Beginn (DTSTART) eines Termins, etwa einer Serie. */
+    suspend fun ursprungLesen(ctx: Context, eventId: Long): Long? = withContext(Dispatchers.IO) {
+        val uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
+        ctx.contentResolver.query(uri, arrayOf(CalendarContract.Events.DTSTART), null, null, null)?.use { c ->
+            if (c.moveToFirst()) c.lng(CalendarContract.Events.DTSTART) else null
+        }
+    }
+
     suspend fun loeschen(ctx: Context, eventId: Long) = withContext(Dispatchers.IO) {
         val uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
         ctx.contentResolver.delete(uri, null, null)
