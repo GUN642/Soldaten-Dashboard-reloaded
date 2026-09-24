@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dashboard Reloaded</string>
+    <string name="widget_name">Soldaten Dashboard – Agenda</string>
+    <string name="widget_beschreibung">Termine und fällige Aufgaben</string>
+</resources>
