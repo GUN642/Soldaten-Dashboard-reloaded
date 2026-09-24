@@ -40,7 +40,45 @@ jobs:
       - name: APK bauen
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon --stacktrace assembleRelease
+          set -o pipefail
+          ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
+
+      - name: Logik-Tests
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:testReleaseUnitTest --tests '*LogikTest*' 2>&1 | tee -a build.log | tail -25
+          grep -h "<testsuite" app/build/test-results/testReleaseUnitTest/*.xml | sed -E 's/.*name="([^"]+)" tests="([0-9]+)" skipped="([0-9]+)" failures="([0-9]+)" errors="([0-9]+)".*/\1: \2 Tests, \4 Fehlschläge, \5 Fehler/'
+
+      - name: Fehler zusammenfassen
+        if: failure()
+        run: |
+          echo "==== FEHLER ===="
+          grep -E "^e: |error:|What went wrong|AAPT|resource .* not found|FAILED|AssertionError|expected" -A2 build.log | head -120 || true
+
+      - name: Bildschirmfotos erzeugen
+        continue-on-error: true
+        run: ./gradlew --no-daemon :app:recordPaparazziRelease 2>&1 | tail -40
+
+      - name: Bildschirmfotos ablegen
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bildschirmfotos
+          path: app/src/test/snapshots/images/*.png
+          if-no-files-found: ignore
+
+      - name: Bildschirmfotos unter eigener Referenz ablegen (nur Entwicklungszweige)
+        if: always() && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+        continue-on-error: true
+        run: |
+          ls app/src/test/snapshots/images/*.png >/dev/null 2>&1 || exit 0
+          mkdir -p /tmp/fotos && cp app/src/test/snapshots/images/*.png /tmp/fotos/
+          cd /tmp/fotos
+          git init -q && git checkout -q -b fotos
+          git -c user.name=ci -c user.email=ci@localhost add -A
+          git -c user.name=ci -c user.email=ci@localhost commit -qm "Bildschirmfotos ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:refs/bildschirmfotos/stand
 
       - name: Version ermitteln
         id: version
@@ -63,6 +101,7 @@ jobs:
           TAG="v${{ steps.version.outputs.name }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" SoldatenDashboardReloaded-v*.apk --clobber
+            gh release edit "$TAG" --notes "Automatisch gebaut aus ${GITHUB_SHA::7}."
           else
             gh release create "$TAG" SoldatenDashboardReloaded-v*.apk \
               --title "Soldaten Dashboard Reloaded $TAG" \
