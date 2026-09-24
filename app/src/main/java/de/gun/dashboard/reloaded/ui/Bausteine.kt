@@ -246,17 +246,17 @@ fun Knopf(
     }
     Box(
         modifier
-            .heightIn(min = if (klein) 32.dp else 42.dp)
+            .heightIn(min = if (klein) 28.dp else 34.dp)
             .clip(RoundedCornerShape(50))
             .background(hg.copy(alpha = if (aktiv) hg.alpha else hg.alpha * 0.4f))
             .border(1.dp, rand, RoundedCornerShape(50))
             .clickable(enabled = aktiv, onClick = onClick)
-            .padding(horizontal = if (klein) 12.dp else 18.dp, vertical = if (klein) 6.dp else 10.dp),
+            .padding(horizontal = if (klein) 10.dp else 14.dp, vertical = if (klein) 5.dp else 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text.uppercase(), color = vg.copy(alpha = if (aktiv) 1f else 0.4f), maxLines = 1,
-            style = TextStyle(fontFamily = Schrift.mono, fontWeight = FontWeight.Bold, fontSize = if (klein) 11.sp else 12.5.sp, letterSpacing = 1.sp)
+            style = TextStyle(fontFamily = Schrift.mono, fontWeight = FontWeight.Bold, fontSize = if (klein) 10.sp else 11.sp, letterSpacing = 0.8.sp)
         )
     }
 }
@@ -647,7 +647,7 @@ fun Wahl(titel: String, text: String, knoepfe: List<Triple<String, KnopfArt, () 
 @Composable
 fun Klappbereich(beschriftung: String, offen: Boolean, onUmschalten: (Boolean) -> Unit, inhalt: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth()) {
-        Knopf((if (offen) "✕ " else "+ ") + beschriftung, Modifier.fillMaxWidth(), if (offen) KnopfArt.NORMAL else KnopfArt.PRIMAER) {
+        Knopf((if (offen) "✕ " else "+ ") + beschriftung, Modifier, if (offen) KnopfArt.NORMAL else KnopfArt.PRIMAER, klein = true) {
             onUmschalten(!offen)
         }
         if (offen) {

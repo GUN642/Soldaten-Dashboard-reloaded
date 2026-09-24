@@ -266,6 +266,10 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.0.2" to listOf(
+        "Tipp auf Monat/Jahr öffnet den Kalender im Vollbild (ohne Kopfzeile, Reiter und Systemleisten); ✕ oder Zurück beendet es.",
+        "Deutlich kleinere Knöpfe, z. B. „Eintrag hinzufügen“, Speichern/Abbrechen und der +-Knopf im Kalender.",
+    ),
     "1.0.1" to listOf(
         "Lehrgänge und Dokumente als Kacheln in zwei Spalten.",
         "Deutlich kompaktere Eingabefelder in allen Formularen.",

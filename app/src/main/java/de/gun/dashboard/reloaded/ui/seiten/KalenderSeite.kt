@@ -116,7 +116,8 @@ fun KalenderSeite() {
                     st.kalenderMonat = LocalDate.now().withDayOfMonth(1); st.kalenderTag = LocalDate.now()
                 }
                 Symbol("↻") { scope.launch { Aktualisierung.geraetLadenJetzt(ctx); st.kurz("Kalender neu eingelesen") } }
-                Symbol("⚙") { st.kalenderEinstellungen = true }
+                if (st.kalenderGross) Symbol("✕") { st.kalenderGross = false }
+                else Symbol("⚙") { st.kalenderEinstellungen = true }
             }
             // Wochentage
             Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp)) {
@@ -147,8 +148,8 @@ fun KalenderSeite() {
             onClick = { st.maske = MaskeStart(datum = st.kalenderTag ?: LocalDate.now()) },
             containerColor = p.akzent, contentColor = textAuf(p.akzent),
             shape = CircleShape,
-            modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(18.dp),
-        ) { Text("+", fontSize = 26.sp, fontFamily = Schrift.mono) }
+            modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp).size(46.dp),
+        ) { Text("+", fontSize = 22.sp, fontFamily = Schrift.mono) }
     }
 }
 

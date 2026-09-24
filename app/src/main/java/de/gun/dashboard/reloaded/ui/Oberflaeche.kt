@@ -63,6 +63,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.expandVertically
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import de.gun.dashboard.reloaded.Aktualisierung
 import de.gun.dashboard.reloaded.BuildConfig
 import de.gun.dashboard.reloaded.MainActivity
@@ -187,9 +191,23 @@ private fun Gesamt(aktivitaet: MainActivity, st: Steuerung) {
         },
     ) { innen ->
         Box(Modifier.fillMaxSize().padding(innen).background(p.bg)) {
+            val vollbild = st.reiter == Reiter.KALENDER && st.kalenderGross && !st.kalenderEinstellungen
+            LaunchedEffect(vollbild) {
+                val fenster = aktivitaet.window
+                WindowCompat.getInsetsController(fenster, fenster.decorView).apply {
+                    if (vollbild) {
+                        systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        hide(WindowInsetsCompat.Type.systemBars())
+                    } else show(WindowInsetsCompat.Type.systemBars())
+                }
+            }
             Column(Modifier.fillMaxSize().statusBarsPadding()) {
-                Kopf(st)
-                ReiterLeiste(st)
+                AnimatedVisibility(!vollbild, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                    Column {
+                        Kopf(st)
+                        ReiterLeiste(st)
+                    }
+                }
                 Box(Modifier.weight(1f).fillMaxWidth().imePadding()) {
                     when (st.reiter) {
                         Reiter.HEUTE -> HeuteSeite()

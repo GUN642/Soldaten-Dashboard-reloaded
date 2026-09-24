@@ -200,8 +200,8 @@ fun BearbeitenKnopf(onClick: () -> Unit) = Symbol("✎", LocalPalette.current.te
 
 @Composable
 fun FormKnoepfe(speichernText: String, onSpeichern: () -> Unit, onAbbrechen: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Knopf(speichernText, Modifier.weight(1f), KnopfArt.PRIMAER, onClick = onSpeichern)
-        Knopf("Abbrechen", art = KnopfArt.NORMAL, onClick = onAbbrechen)
+    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+        Knopf("Abbrechen", art = KnopfArt.NORMAL, klein = true, onClick = onAbbrechen)
+        Knopf(speichernText, art = KnopfArt.PRIMAER, klein = true, onClick = onSpeichern)
     }
 }

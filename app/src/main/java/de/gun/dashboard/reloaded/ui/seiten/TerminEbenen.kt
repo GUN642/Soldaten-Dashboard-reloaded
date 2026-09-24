@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -420,11 +421,10 @@ fun TerminMaskeEbene(start: MaskeStart) {
                 anhaenge = neu
             })
             Hinweis("Anhänge werden in dieser App gespeichert und beim Termin angezeigt, nicht in den Gerätekalender übertragen.")
-            Row(Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
-                Knopf(if (speichert) "Speichert …" else if (bearbeiten) "✓ Änderungen übernehmen" else "+ Termin anlegen",
-                    Modifier.weight(1f), KnopfArt.PRIMAER, aktiv = !speichert) { speichern() }
-                Spacer(Modifier.width(8.dp))
-                Knopf("Abbrechen") { schliessen(false) }
+            Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+                Knopf("Abbrechen", klein = true) { schliessen(false) }
+                Knopf(if (speichert) "Speichert …" else if (bearbeiten) "✓ Übernehmen" else "+ Termin anlegen",
+                    art = KnopfArt.PRIMAER, klein = true, aktiv = !speichert) { speichern() }
             }
             Abstand(60.dp)
         }
