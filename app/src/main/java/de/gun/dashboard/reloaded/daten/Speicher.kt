@@ -12,17 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.UUID
 
-val JsonFormat = Json {
-    ignoreUnknownKeys = true
-    coerceInputValues = true
-    isLenient = true
-    encodeDefaults = true
-    explicitNulls = false
-}
 
 /**
  * Hält den gesamten Datenbestand im Speicher und schreibt ihn bei jeder

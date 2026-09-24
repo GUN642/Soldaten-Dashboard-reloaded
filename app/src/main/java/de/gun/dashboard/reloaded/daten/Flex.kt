@@ -7,6 +7,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.nullable
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -88,4 +89,13 @@ object FlexBool : KSerializer<Boolean> {
         if (e !is JsonPrimitive || e is JsonNull) return false
         return e.booleanOrNull ?: (e.content == "1" || e.content.equals("true", true))
     }
+}
+
+/** Gemeinsames JSON-Format: tolerant beim Lesen, vollständig beim Schreiben. */
+val JsonFormat = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+    isLenient = true
+    encodeDefaults = true
+    explicitNulls = false
 }

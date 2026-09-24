@@ -40,7 +40,14 @@ jobs:
       - name: APK bauen
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon --stacktrace assembleRelease
+          set -o pipefail
+          ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
+
+      - name: Fehler zusammenfassen
+        if: failure()
+        run: |
+          echo "==== FEHLER ===="
+          grep -E "^e: |error:|What went wrong|AAPT|resource .* not found" -A2 build.log | head -120 || true
 
       - name: Version ermitteln
         id: version

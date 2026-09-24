@@ -81,7 +81,7 @@ object Feiertage {
     fun arbeitstage(von: LocalDate?, bis: LocalDate?, land: String): Int {
         if (von == null || bis == null || bis.isBefore(von)) return 0
         var n = 0
-        var d = von
+        var d: LocalDate = von
         while (!d.isAfter(bis)) {
             if (!istWochenende(d) && !ist(d, land)) n++
             d = d.plusDays(1)

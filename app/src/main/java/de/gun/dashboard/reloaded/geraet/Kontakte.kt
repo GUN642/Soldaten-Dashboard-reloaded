@@ -11,16 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
-/** Geburtstag, Jahrestag oder eigener Anlass aus den Kontakten. */
-data class KontaktAnlass(
-    val kontaktId: String,
-    val name: String,
-    val bezeichnung: String,
-    val jahr: Int?,
-    val monat: Int,
-    val tag: Int,
-)
-
 object Kontakte {
     private val _anlaesse = MutableStateFlow<List<KontaktAnlass>>(emptyList())
     val anlaesse: StateFlow<List<KontaktAnlass>> = _anlaesse.asStateFlow()
