@@ -1,15 +1,21 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,6 +83,32 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+private const val SEITEN = 2400
+private const val MITTE = SEITEN / 2
+
+private fun monatZuSeite(anker: LocalDate, seite: Int): LocalDate = anker.plusMonths((seite - MITTE).toLong())
+private fun seiteZuMonat(anker: LocalDate, monat: LocalDate): Int =
+    (MITTE + ChronoUnit.MONTHS.between(anker, monat.withDayOfMonth(1))).toInt().coerceIn(0, SEITEN - 1)
+
+/** Verteilt die Termine einer Woche auf Spuren (mehrtägige zuerst). */
+private fun wochenBalken(termine: List<Termin>, ws: LocalDate): List<Balken> {
+    val we = ws.plusDays(6)
+    val inWoche = termine.filter { !it.ersterTag.isAfter(we) && !it.letzterTag.isBefore(ws) }
+        .sortedWith(compareByDescending<Termin> { ChronoUnit.DAYS.between(it.ersterTag, it.letzterTag) }.thenBy { it.start })
+    val spuren = mutableListOf<MutableList<IntRange>>()
+    return inWoche.map { t ->
+        val von = maxOf(0, ChronoUnit.DAYS.between(ws, t.ersterTag).toInt())
+        val bis = minOf(6, ChronoUnit.DAYS.between(ws, t.letzterTag).toInt())
+        var s = 0
+        while (true) {
+            if (s >= spuren.size) spuren.add(mutableListOf())
+            if (spuren[s].none { !(bis < it.first || von > it.last) }) { spuren[s].add(von..bis); break }
+            s++
+        }
+        Balken(t, von, bis, s, t.ersterTag.isBefore(ws), t.letzterTag.isAfter(we))
+    }
+}
+
 private data class Balken(val termin: Termin, val von: Int, val bis: Int, val spur: Int, val offenLinks: Boolean, val offenRechts: Boolean)
 
 @Composable
@@ -97,8 +129,24 @@ fun KalenderSeite() {
     // Ferien des angezeigten Jahres bei Bedarf nachladen
     androidx.compose.runtime.LaunchedEffect(monat.year, d.feiertagsLand.land, d.ferien.an) { ferienSicherstellen(monat.year) }
 
+    // Monate als Seiten: flüssiges Mitziehen mit dem Finger, Nachbarmonate werden vorab aufgebaut
+    val anker = remember { st.kalenderMonat.withDayOfMonth(1) }
+    val pager = rememberPagerState(initialPage = seiteZuMonat(anker, monat)) { SEITEN }
+    val cache = remember(b) { ConcurrentHashMap<LocalDate, List<Termin>>() }
+    // Wischen -> angezeigter Monat
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.currentPage }.collect { st.kalenderMonat = monatZuSeite(anker, it) }
+    }
+    // Knöpfe (‹ › ◎) -> Seite
+    LaunchedEffect(monat) {
+        val ziel = seiteZuMonat(anker, monat)
+        if (ziel != pager.currentPage) {
+            if (kotlin.math.abs(ziel - pager.currentPage) > 1) pager.scrollToPage(ziel) else pager.animateScrollToPage(ziel, animationSpec = tween(240, easing = FastOutSlowInEasing))
+        }
+    }
+
     fun wechseln(delta: Long) {
-        st.kalenderMonat = st.kalenderMonat.plusMonths(delta)
+        st.kalenderMonat = st.kalenderMonat.withDayOfMonth(1).plusMonths(delta)
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -127,17 +175,19 @@ fun KalenderSeite() {
                     }
                 }
             }
-            AnimatedContent(
-                targetState = monat,
-                transitionSpec = {
-                    val vor = targetState.isAfter(initialState)
-                    (slideInHorizontally { if (vor) it / 3 else -it / 3 } + fadeIn()) togetherWith
-                        (slideOutHorizontally { if (vor) -it / 3 else it / 3 } + fadeOut())
-                },
-                label = "monat",
+            HorizontalPager(
+                state = pager,
                 modifier = if (st.kalenderGross) Modifier.weight(1f) else Modifier,
-            ) { m ->
-                MonatsRaster(m, b, skala, st.kalenderGross, rasterMin, onWisch = { wechseln(it) })
+                beyondViewportPageCount = 1,
+                flingBehavior = PagerDefaults.flingBehavior(
+                    state = pager,
+                    snapPositionalThreshold = 0.2f,
+                    snapAnimationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                ),
+                verticalAlignment = Alignment.Top,
+                key = { it },
+            ) { seite ->
+                MonatsRaster(monatZuSeite(anker, seite), b, skala, st.kalenderGross, rasterMin, cache, seite == pager.currentPage)
             }
             if (!st.kalenderGross) {
                 st.kalenderTag?.let { tag -> TagesDetail(tag, b) }
@@ -154,7 +204,11 @@ fun KalenderSeite() {
 }
 
 @Composable
-private fun MonatsRaster(monat: LocalDate, b: de.gun.dashboard.reloaded.logik.TerminBestand, skala: Float, gross: Boolean, rasterMin: Dp, onWisch: (Long) -> Unit) {
+private fun MonatsRaster(
+    monat: LocalDate, b: de.gun.dashboard.reloaded.logik.TerminBestand, skala: Float, gross: Boolean, rasterMin: Dp,
+    cache: ConcurrentHashMap<LocalDate, List<Termin>>,
+    sofort: Boolean,
+) {
     val p = LocalPalette.current
     val st = LocalSteuerung.current
     val haptik = LocalHapticFeedback.current
@@ -163,41 +217,23 @@ private fun MonatsRaster(monat: LocalDate, b: de.gun.dashboard.reloaded.logik.Te
     val start = wochenStart(erster)
     val wochen = ((ChronoUnit.DAYS.between(start, erster) + erster.lengthOfMonth() + 6) / 7).toInt()
     val ende = start.plusDays(wochen * 7L - 1)
-    val termine = remember(b, start, ende) { terminFenster(b, start, ende) }
+    // Termine im Hintergrund berechnen und je Monat zwischenspeichern, damit das Blättern nicht ruckelt
+    // Der gerade sichtbare Monat wird bei einem Cache-Fehlschlag sofort berechnet, Nachbarmonate im Hintergrund
+    val termine by produceState(cache[start] ?: if (sofort) terminFenster(b, start, ende).also { cache[start] = it } else emptyList(), b, start) {
+        value = cache[start] ?: withContext(Dispatchers.Default) { terminFenster(b, start, ende) }.also { cache[start] = it }
+    }
     val heute = LocalDate.now()
     val spurH = (15 * skala).dp
 
     BoxWithConstraints(
         Modifier.fillMaxWidth().then(if (gross) Modifier.fillMaxHeight() else Modifier).padding(horizontal = 6.dp)
-            .pointerInput(Unit) {
-                var summe = 0f
-                detectHorizontalDragGestures(
-                    onDragStart = { summe = 0f },
-                    onDragEnd = { if (summe < -90) onWisch(1) else if (summe > 90) onWisch(-1) },
-                    onHorizontalDrag = { ch, dx -> summe += dx; ch.consume() },
-                )
-            }
     ) {
         val zeilenH: Dp = if (gross) (maxHeight / wochen).coerceAtLeast(60.dp) else maxOf((86 * skala).dp, rasterMin / wochen)
         val zellenB = maxWidth / 7
         Column {
             for (w in 0 until wochen) {
                 val ws = start.plusDays(w * 7L)
-                val we = ws.plusDays(6)
-                val inWoche = termine.filter { !it.ersterTag.isAfter(we) && !it.letzterTag.isBefore(ws) }
-                    .sortedWith(compareByDescending<Termin> { ChronoUnit.DAYS.between(it.ersterTag, it.letzterTag) }.thenBy { it.start })
-                val spuren = mutableListOf<MutableList<IntRange>>()
-                val balken = inWoche.map { t ->
-                    val von = maxOf(0, ChronoUnit.DAYS.between(ws, t.ersterTag).toInt())
-                    val bis = minOf(6, ChronoUnit.DAYS.between(ws, t.letzterTag).toInt())
-                    var s = 0
-                    while (true) {
-                        if (s >= spuren.size) spuren.add(mutableListOf())
-                        if (spuren[s].none { !(bis < it.first || von > it.last) }) { spuren[s].add(von..bis); break }
-                        s++
-                    }
-                    Balken(t, von, bis, s, t.ersterTag.isBefore(ws), t.letzterTag.isAfter(we))
-                }
+                val balken = remember(termine, ws) { wochenBalken(termine, ws) }
                 val kopfH = (20 * skala).dp
                 val platz = zeilenH - kopfH - 2.dp
                 val maxSpuren = maxOf(1, (platz / spurH).toInt())

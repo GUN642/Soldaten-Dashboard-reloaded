@@ -266,6 +266,10 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.0.4" to listOf(
+        "Kalender blättert flüssig: Der Monat folgt dem Finger, schon kurzes Wischen reicht.",
+        "Termine der Nachbarmonate werden im Hintergrund vorberechnet und zwischengespeichert – kein Ruckeln beim Wechsel.",
+    ),
     "1.0.3" to listOf(
         "Update-Prüfung bei jedem App-Start statt nur alle zwei Tage.",
     ),
