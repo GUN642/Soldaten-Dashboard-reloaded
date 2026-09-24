@@ -110,17 +110,12 @@ fun HeuteSeite() {
         item {
             Box(Modifier.fillMaxWidth().clip(RUND).background(p.panel).border(1.dp, p.rand, RUND)) {
                 if (p.punktRaster) PunktRaster(Modifier.matchParentSize(), p.randLeise, 11.dp)
-                Column(Modifier.padding(18.dp)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Etikett(heute.lang())
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Punkt(zwei(jetzt.hour) + ":" + zwei(jetzt.minute), 52.sp)
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.padding(bottom = 8.dp)) {
-                            Mono("KW " + kalenderwoche(heute), p.akzent, 13.sp, fett = true)
-                            Feiertage.name(heute, d.feiertagsLand.land)?.let { Mono(it, p.textDim, 11.sp) }
-                            Feiertage.ferien(heute, d.ferien)?.let { Mono(it, p.textDim, 11.sp) }
-                        }
-                    }
+                    Punkt(zwei(jetzt.hour) + ":" + zwei(jetzt.minute), 52.sp)
+                    Mono("KW " + kalenderwoche(heute), p.akzent, 13.sp, fett = true)
+                    Feiertage.name(heute, d.feiertagsLand.land)?.let { Mono(it, p.textDim, 11.sp) }
+                    Feiertage.ferien(heute, d.ferien)?.let { Mono(it, p.textDim, 11.sp) }
                 }
             }
         }

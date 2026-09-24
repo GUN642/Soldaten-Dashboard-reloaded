@@ -101,7 +101,9 @@ fun KalenderSeite() {
         st.kalenderMonat = st.kalenderMonat.plusMonths(delta)
     }
 
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // Raster füllt mindestens die sichtbare Höhe unter Kopf und Wochentagen
+        val rasterMin = if (constraints.hasBoundedHeight) (maxHeight - 84.dp).coerceAtLeast(0.dp) else 0.dp
         Column(Modifier.fillMaxSize().then(if (st.kalenderGross) Modifier else Modifier.verticalScroll(rememberScrollState()))) {
             // Kopf
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -134,7 +136,7 @@ fun KalenderSeite() {
                 label = "monat",
                 modifier = if (st.kalenderGross) Modifier.weight(1f) else Modifier,
             ) { m ->
-                MonatsRaster(m, b, skala, st.kalenderGross, onWisch = { wechseln(it) })
+                MonatsRaster(m, b, skala, st.kalenderGross, rasterMin, onWisch = { wechseln(it) })
             }
             if (!st.kalenderGross) {
                 st.kalenderTag?.let { tag -> TagesDetail(tag, b) }
@@ -151,7 +153,7 @@ fun KalenderSeite() {
 }
 
 @Composable
-private fun MonatsRaster(monat: LocalDate, b: de.gun.dashboard.reloaded.logik.TerminBestand, skala: Float, gross: Boolean, onWisch: (Long) -> Unit) {
+private fun MonatsRaster(monat: LocalDate, b: de.gun.dashboard.reloaded.logik.TerminBestand, skala: Float, gross: Boolean, rasterMin: Dp, onWisch: (Long) -> Unit) {
     val p = LocalPalette.current
     val st = LocalSteuerung.current
     val haptik = LocalHapticFeedback.current
@@ -175,7 +177,7 @@ private fun MonatsRaster(monat: LocalDate, b: de.gun.dashboard.reloaded.logik.Te
                 )
             }
     ) {
-        val zeilenH: Dp = if (gross) (maxHeight / wochen).coerceAtLeast(60.dp) else (86 * skala).dp
+        val zeilenH: Dp = if (gross) (maxHeight / wochen).coerceAtLeast(60.dp) else maxOf((86 * skala).dp, rasterMin / wochen)
         val zellenB = maxWidth / 7
         Column {
             for (w in 0 until wochen) {

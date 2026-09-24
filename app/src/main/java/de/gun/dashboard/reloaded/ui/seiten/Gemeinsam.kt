@@ -120,7 +120,7 @@ fun AnhangBereich(liste: List<Anhang>, onListe: (List<Anhang>) -> Unit, nurBilde
 
 /** Vorschaubilder bzw. Dateikacheln; Antippen öffnet die Datei. */
 @Composable
-fun AnhangVorschau(liste: List<Anhang>, onEntfernen: ((Anhang) -> Unit)? = null) {
+fun AnhangVorschau(liste: List<Anhang>, onEntfernen: ((Anhang) -> Unit)? = null, klein: Boolean = false) {
     if (liste.isEmpty()) return
     val ctx = LocalContext.current
     val p = LocalPalette.current
@@ -128,7 +128,7 @@ fun AnhangVorschau(liste: List<Anhang>, onEntfernen: ((Anhang) -> Unit)? = null)
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         liste.forEach { a ->
             Box(
-                Modifier.size(84.dp).clip(RUND_KLEIN).background(p.panelAlt).border(1.dp, p.rand, RUND_KLEIN)
+                Modifier.size(if (klein) 52.dp else 84.dp).clip(RUND_KLEIN).background(p.panelAlt).border(1.dp, p.rand, RUND_KLEIN)
                     .clickable { if (!Anhaenge.oeffnen(ctx, a)) st.melden("Anhang", "Die Datei ließ sich nicht öffnen.") }
             ) {
                 var bild by remember(a) { mutableStateOf<ImageBitmap?>(null) }
@@ -147,8 +147,10 @@ fun AnhangVorschau(liste: List<Anhang>, onEntfernen: ((Anhang) -> Unit)? = null)
                 if (b != null) Image(b, a.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Column(Modifier.fillMaxSize().padding(6.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                     Mono(if (a.typ == "application/pdf") "PDF" else "DATEI", p.akzent, 13.sp, fett = true)
-                    Fliesstext(a.name, p.textDim, 10.sp, zeilen = 2)
-                    Mono(groesseText(a.groesse), p.textFaint, 9.sp)
+                    if (!klein) {
+                        Fliesstext(a.name, p.textDim, 10.sp, zeilen = 2)
+                        Mono(groesseText(a.groesse), p.textFaint, 9.sp)
+                    }
                 }
                 if (onEntfernen != null) {
                     Box(Modifier.align(Alignment.TopEnd).padding(2.dp).clip(RUND_KLEIN).background(p.bg.copy(alpha = 0.7f))) {

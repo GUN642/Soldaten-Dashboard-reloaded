@@ -1,6 +1,13 @@
 package de.gun.dashboard.reloaded.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -372,7 +379,54 @@ fun feldFarben() = LocalPalette.current.let { p ->
         cursorColor = p.akzent, focusedLabelColor = p.akzent, unfocusedLabelColor = p.textDim,
         focusedContainerColor = p.panelAlt, unfocusedContainerColor = p.panelAlt,
         focusedPlaceholderColor = p.textFaint, unfocusedPlaceholderColor = p.textFaint,
+        disabledTextColor = p.text, disabledBorderColor = p.rand, disabledLabelColor = p.textDim,
+        disabledContainerColor = p.panelAlt, disabledPlaceholderColor = p.textFaint,
     )
+}
+
+private val FELD_TEXT @Composable get() = TextStyle(fontFamily = Schrift.text, fontSize = 14.sp, color = LocalPalette.current.text)
+
+/**
+ * Kompakter Rahmen für alle Eingabefelder: deutlich weniger Innenabstand als das
+ * Material-Standardfeld (56 dp). Ein Symbol rechts wird überlagert statt über den
+ * Trailing-Slot eingesetzt, der sonst 48 dp Mindesthöhe erzwingt.
+ */
+@Composable
+private fun FeldRahmen(
+    text: String,
+    inner: @Composable () -> Unit,
+    label: String,
+    platzhalter: String,
+    einzeilig: Boolean,
+    quelle: MutableInteractionSource,
+    aktiv: Boolean = true,
+    mitSymbol: Boolean = false,
+) {
+    val farben = feldFarben()
+    OutlinedTextFieldDefaults.DecorationBox(
+        value = text, innerTextField = inner, enabled = aktiv, singleLine = einzeilig,
+        visualTransformation = VisualTransformation.None, interactionSource = quelle,
+        label = { Text(label, fontFamily = Schrift.text, fontSize = 12.sp) },
+        placeholder = if (platzhalter.isNotEmpty()) {
+            { Text(platzhalter, fontFamily = Schrift.text, fontSize = 13.sp) }
+        } else null,
+        colors = farben,
+        contentPadding = PaddingValues(start = 12.dp, end = if (mitSymbol) 40.dp else 12.dp, top = 9.dp, bottom = 9.dp),
+        container = {
+            OutlinedTextFieldDefaults.ContainerBox(aktiv, false, quelle, farben, RUND_KLEIN)
+        },
+    )
+}
+
+/** Kleines Symbol am rechten Rand eines Feldes. */
+@Composable
+private fun BoxScope.FeldSymbol(symbol: ImageVector, beschreibung: String?, onClick: (() -> Unit)?) {
+    val p = LocalPalette.current
+    Box(
+        Modifier.align(Alignment.CenterEnd).padding(end = 4.dp).size(34.dp).clip(CircleShape)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+        contentAlignment = Alignment.Center,
+    ) { Icon(symbol, beschreibung, tint = p.textDim, modifier = Modifier.size(20.dp)) }
 }
 
 @Composable
@@ -384,24 +438,30 @@ fun Feld(
     platzhalter: String = "",
     zeilen: Int = 1,
     tastatur: KeyboardType = KeyboardType.Text,
-    rechts: (@Composable () -> Unit)? = null,
+    symbol: ImageVector? = null,
+    onSymbol: (() -> Unit)? = null,
     beiVerlassen: (() -> Unit)? = null,
 ) {
     var hatteFokus by remember { mutableStateOf(false) }
-    OutlinedTextField(
-        value = wert, onValueChange = onWert,
-        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)
-            .then(if (beiVerlassen != null) Modifier.onFocusChanged {
-                if (it.isFocused) hatteFokus = true
-                else if (hatteFokus) { hatteFokus = false; beiVerlassen() }
-            } else Modifier),
-        label = { Text(label, fontFamily = Schrift.text, fontSize = 13.sp) },
-        placeholder = { if (platzhalter.isNotEmpty()) Text(platzhalter, fontFamily = Schrift.text, fontSize = 14.sp) },
-        singleLine = zeilen == 1, minLines = if (zeilen > 1) zeilen else 1,
-        keyboardOptions = KeyboardOptions(keyboardType = tastatur),
-        textStyle = TextStyle(fontFamily = Schrift.text, fontSize = 15.sp),
-        shape = RUND_KLEIN, colors = feldFarben(), trailingIcon = rechts,
-    )
+    val quelle = remember { MutableInteractionSource() }
+    val p = LocalPalette.current
+    Box(modifier.fillMaxWidth().padding(top = 7.dp, bottom = 2.dp)) {
+        BasicTextField(
+            value = wert, onValueChange = onWert,
+            modifier = Modifier.fillMaxWidth()
+                .then(if (beiVerlassen != null) Modifier.onFocusChanged {
+                    if (it.isFocused) hatteFokus = true
+                    else if (hatteFokus) { hatteFokus = false; beiVerlassen() }
+                } else Modifier),
+            singleLine = zeilen == 1, minLines = if (zeilen > 1) zeilen else 1,
+            keyboardOptions = KeyboardOptions(keyboardType = tastatur),
+            textStyle = FELD_TEXT, cursorBrush = SolidColor(p.akzent), interactionSource = quelle,
+            decorationBox = { inner ->
+                FeldRahmen(wert, inner, label, platzhalter, zeilen == 1, quelle, mitSymbol = symbol != null)
+            },
+        )
+        if (symbol != null) FeldSymbol(symbol, null, onSymbol)
+    }
 }
 
 /** Uhrzeit, wird beim Verlassen in HH:MM umgeschrieben (0930 -> 09:30). */
@@ -419,40 +479,38 @@ fun DatumFeld(wert: String, onWert: (String) -> Unit, label: String, modifier: M
     var hatteFokus by remember { mutableStateOf(false) }
     var feld by remember { mutableStateOf(TextFieldValue(wert, TextRange(wert.length))) }
     if (feld.text != wert) feld = TextFieldValue(wert, TextRange(wert.length))
-    OutlinedTextField(
-        value = feld,
-        onValueChange = { neu ->
-            val z = neu.text.filter { it.isDigit() }.take(8)
-            val t = when {
-                z.length > 4 -> z.substring(0, 2) + "." + z.substring(2, 4) + "." + z.substring(4)
-                z.length > 2 -> z.substring(0, 2) + "." + z.substring(2)
-                else -> z
-            }
-            val getippt = neu.text.length >= feld.text.length
-            val ergebnis = if (getippt) t else neu.text.filter { it.isDigit() || it == '.' }
-            feld = TextFieldValue(ergebnis, TextRange(ergebnis.length))
-            onWert(ergebnis)
-        },
-        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp).onFocusChanged {
-            if (it.isFocused) hatteFokus = true
-            else if (hatteFokus) {
-                hatteFokus = false
-                val z = wert.filter { c -> c.isDigit() }
-                if (z.length == 6) onWert(z.substring(0, 2) + "." + z.substring(2, 4) + ".20" + z.substring(4))
-            }
-        },
-        label = { Text(label, fontFamily = Schrift.text, fontSize = 13.sp) },
-        placeholder = { Text("TT.MM.JJJJ", fontFamily = Schrift.text) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        textStyle = TextStyle(fontFamily = Schrift.text, fontSize = 15.sp),
-        shape = RUND_KLEIN, colors = feldFarben(),
-        trailingIcon = {
-            IconButton(onClick = { zeigen = true }) {
-                Icon(Icons.Outlined.CalendarMonth, "Kalender", tint = LocalPalette.current.textDim)
-            }
-        },
-    )
+    val quelle = remember { MutableInteractionSource() }
+    val p0 = LocalPalette.current
+    Box(modifier.fillMaxWidth().padding(top = 7.dp, bottom = 2.dp)) {
+        BasicTextField(
+            value = feld,
+            onValueChange = { neu ->
+                val z = neu.text.filter { it.isDigit() }.take(8)
+                val t = when {
+                    z.length > 4 -> z.substring(0, 2) + "." + z.substring(2, 4) + "." + z.substring(4)
+                    z.length > 2 -> z.substring(0, 2) + "." + z.substring(2)
+                    else -> z
+                }
+                val getippt = neu.text.length >= feld.text.length
+                val ergebnis = if (getippt) t else neu.text.filter { it.isDigit() || it == '.' }
+                feld = TextFieldValue(ergebnis, TextRange(ergebnis.length))
+                onWert(ergebnis)
+            },
+            modifier = Modifier.fillMaxWidth().onFocusChanged {
+                if (it.isFocused) hatteFokus = true
+                else if (hatteFokus) {
+                    hatteFokus = false
+                    val z = wert.filter { c -> c.isDigit() }
+                    if (z.length == 6) onWert(z.substring(0, 2) + "." + z.substring(2, 4) + ".20" + z.substring(4))
+                }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            textStyle = FELD_TEXT, cursorBrush = SolidColor(p0.akzent), interactionSource = quelle,
+            decorationBox = { inner -> FeldRahmen(feld.text, inner, label, "TT.MM.JJJJ", true, quelle, mitSymbol = true) },
+        )
+        FeldSymbol(Icons.Outlined.CalendarMonth, "Kalender") { zeigen = true }
+    }
     if (zeigen) {
         val start = parseDE(wert) ?: LocalDate.now()
         val zustand = rememberDatePickerState(initialSelectedDateMillis = start.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
@@ -491,21 +549,16 @@ fun DatumFeld(wert: String, onWert: (String) -> Unit, label: String, modifier: M
 fun Auswahl(label: String, optionen: List<Pair<String, String>>, wert: String, modifier: Modifier = Modifier, onWert: (String) -> Unit) {
     var offen by remember { mutableStateOf(false) }
     val p = LocalPalette.current
-    Box(modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        OutlinedTextField(
-            value = optionen.firstOrNull { it.first == wert }?.second ?: wert,
-            onValueChange = {}, readOnly = true, enabled = false,
-            label = { Text(label, fontFamily = Schrift.text, fontSize = 13.sp) },
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = TextStyle(fontFamily = Schrift.text, fontSize = 15.sp),
-            shape = RUND_KLEIN,
-            trailingIcon = { Icon(Icons.Outlined.KeyboardArrowDown, null, tint = p.textDim) },
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = p.text, disabledBorderColor = p.rand, disabledLabelColor = p.textDim,
-                disabledContainerColor = p.panelAlt, disabledTrailingIconColor = p.textDim,
-            ),
+    val quelle = remember { MutableInteractionSource() }
+    val anzeige = optionen.firstOrNull { it.first == wert }?.second ?: wert
+    Box(modifier.fillMaxWidth().padding(top = 7.dp, bottom = 2.dp)) {
+        BasicTextField(
+            value = anzeige, onValueChange = {}, readOnly = true, enabled = false, singleLine = true,
+            modifier = Modifier.fillMaxWidth(), textStyle = FELD_TEXT, interactionSource = quelle,
+            decorationBox = { inner -> FeldRahmen(anzeige, inner, label, "", true, quelle, aktiv = false, mitSymbol = true) },
         )
         Box(Modifier.matchParentSize().clip(RUND_KLEIN).clickable { offen = true })
+        FeldSymbol(Icons.Outlined.KeyboardArrowDown, null, null)
         DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
             optionen.forEach { (id, name) ->
                 DropdownMenuItem(
@@ -521,11 +574,8 @@ fun Auswahl(label: String, optionen: List<Pair<String, String>>, wert: String, m
 @Composable
 fun VorschlagFeld(wert: String, onWert: (String) -> Unit, label: String, vorschlaege: List<Pair<String, String>>, onVorschlag: ((String) -> Unit)? = null) {
     var offen by remember { mutableStateOf(false) }
-    val p = LocalPalette.current
     Box {
-        Feld(wert, onWert, label, rechts = {
-            IconButton(onClick = { offen = true }) { Icon(Icons.Outlined.KeyboardArrowDown, "Vorschläge", tint = p.textDim) }
-        })
+        Feld(wert, onWert, label, symbol = Icons.Outlined.KeyboardArrowDown, onSymbol = { offen = true })
         DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
             vorschlaege.forEach { (id, name) ->
                 DropdownMenuItem(text = { Text(name, fontFamily = Schrift.text) }, onClick = {

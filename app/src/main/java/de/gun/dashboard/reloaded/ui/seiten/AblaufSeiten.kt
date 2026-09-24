@@ -1,6 +1,19 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
 import androidx.compose.foundation.layout.Arrangement
+import de.gun.dashboard.reloaded.ui.RUND_KLEIN
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -46,7 +59,6 @@ import de.gun.dashboard.reloaded.ui.Mono
 import de.gun.dashboard.reloaded.ui.Punkt
 import de.gun.dashboard.reloaded.ui.StatusBalken
 import de.gun.dashboard.reloaded.ui.StatusMarke
-import de.gun.dashboard.reloaded.ui.Zeile
 import de.gun.dashboard.reloaded.ui.statusFarbe
 import java.time.LocalDate
 
@@ -67,6 +79,51 @@ private fun Uebersicht(bisListe: List<String>) {
         Abstand(10.dp)
         StatusBalken(g, w, a)
         Hinweis("Warnstufe „gelb“ ab sechs Monate vor Ablauf.")
+    }
+}
+
+/** Einträge als Kacheln in zwei Spalten; Kacheln einer Reihe sind gleich hoch. */
+@Composable
+private fun <T> KachelRaster(liste: List<T>, kachel: @Composable (T, Modifier) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        liste.chunked(2).forEach { reihe ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                reihe.forEach { kachel(it, Modifier.weight(1f).fillMaxHeight()) }
+                if (reihe.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun Kachel(
+    titel: String,
+    bis: String,
+    modifier: Modifier,
+    onBearbeiten: () -> Unit,
+    onLoeschen: () -> Unit,
+    extra: @Composable ColumnScope.() -> Unit,
+) {
+    val p = LocalPalette.current
+    val s = statusVon(bis)
+    val farbe = p.statusFarbe(s)
+    Column(
+        modifier.clip(RUND_KLEIN).background(p.panelAlt).border(1.dp, p.randLeise, RUND_KLEIN).clickable(onClick = onBearbeiten)
+    ) {
+        Box(Modifier.fillMaxWidth().height(4.dp).background(farbe))
+        Column(Modifier.weight(1f).padding(start = 10.dp, end = 10.dp, top = 8.dp)) {
+            StatusMarke(s)
+            Abstand(6.dp)
+            Fliesstext(titel, fett = true, zeilen = 2)
+            Abstand(2.dp)
+            Punkt(fmt(bis), 17.sp, farbe)
+            Mono(restlaufzeit(bis), p.textDim, 10.5.sp)
+            extra()
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp), horizontalArrangement = Arrangement.End) {
+            BearbeitenKnopf(onBearbeiten)
+            LoeschKnopf(onLoeschen)
+        }
     }
 }
 
@@ -134,25 +191,17 @@ fun LehrgaengeSeite() {
                 Abstand()
                 val sortiert = d.ablaufregister.sortedBy { parseDE(it.gueltigBis) ?: LocalDate.MAX }
                 if (sortiert.isEmpty()) Leer("Noch keine Einträge.")
-                sortiert.forEach { e ->
-                    val s = statusVon(e.gueltigBis)
-                    Zeile(p.statusFarbe(s), aktionen = {
-                        BearbeitenKnopf {
-                            bearbeitet = e.id; art = e.art; von = e.gueltigVon; wert = e.dauerWert; einheit = e.dauerEinheit.ifBlank { "J" }
-                            bis = e.gueltigBis; notiz = e.notiz; offen = true
-                        }
-                        LoeschKnopf { loeschen = e }
-                    }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Fliesstext(e.art, fett = true, modifier = Modifier.weight(1f), zeilen = 2)
-                            StatusMarke(s)
-                        }
-                        Mono("Gültig bis ${fmt(e.gueltigBis)} · ${restlaufzeit(e.gueltigBis)}", p.textDim, 12.sp)
+                KachelRaster(sortiert) { e, mod ->
+                    fun bearbeiten() {
+                        bearbeitet = e.id; art = e.art; von = e.gueltigVon; wert = e.dauerWert; einheit = e.dauerEinheit.ifBlank { "J" }
+                        bis = e.gueltigBis; notiz = e.notiz; offen = true
+                    }
+                    Kachel(e.art, e.gueltigBis, mod, onBearbeiten = ::bearbeiten, onLoeschen = { loeschen = e }) {
                         if (e.gueltigVon.isNotBlank() || e.dauerWert.isNotBlank()) Mono(
-                            "Von ${fmt(e.gueltigVon)}" + if (e.dauerWert.isNotBlank()) " · Dauer ${e.dauerWert} ${EINHEITEN.firstOrNull { it.first == e.dauerEinheit }?.second ?: ""}" else "",
-                            p.textFaint, 11.sp
+                            "Von ${fmt(e.gueltigVon)}" + if (e.dauerWert.isNotBlank()) " · ${e.dauerWert} ${EINHEITEN.firstOrNull { it.first == e.dauerEinheit }?.second ?: ""}" else "",
+                            p.textFaint, 10.5.sp
                         )
-                        if (e.notiz.isNotBlank()) Fliesstext(e.notiz, p.textDim, 12.sp)
+                        if (e.notiz.isNotBlank()) Fliesstext(e.notiz, p.textDim, 11.5.sp, zeilen = 2)
                     }
                 }
             }
@@ -226,23 +275,16 @@ fun DokumenteSeite() {
                 Abstand()
                 val sortiert = d.dokumente.sortedBy { parseDE(it.gueltigBis) ?: LocalDate.MAX }
                 if (sortiert.isEmpty()) Leer("Noch keine Dokumente.")
-                sortiert.forEach { e ->
-                    val s = statusVon(e.gueltigBis)
-                    Zeile(p.statusFarbe(s), aktionen = {
-                        BearbeitenKnopf {
-                            bearbeitet = e.id; art = e.art; inhaber = e.inhaber; nummer = e.nummer; von = e.gueltigVon; wert = e.dauerWert
-                            einheit = e.dauerEinheit.ifBlank { "J" }; bis = e.gueltigBis; notiz = e.notiz; dateien = e.dateien; neu = emptyList(); offen = true
-                        }
-                        LoeschKnopf { loeschen = e }
-                    }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Fliesstext(e.art, fett = true, modifier = Modifier.weight(1f), zeilen = 2)
-                            StatusMarke(s)
-                        }
-                        Mono(listOf("Inhaber: " + fmt(e.inhaber), "Nr. " + fmt(e.nummer)).joinToString(" · "), p.textDim, 12.sp)
-                        Mono("Gültig bis ${fmt(e.gueltigBis)} · ${restlaufzeit(e.gueltigBis)}", p.textDim, 12.sp)
-                        if (e.notiz.isNotBlank()) Fliesstext(e.notiz, p.textDim, 12.sp)
-                        AnhangVorschau(e.dateien)
+                KachelRaster(sortiert) { e, mod ->
+                    fun bearbeiten() {
+                        bearbeitet = e.id; art = e.art; inhaber = e.inhaber; nummer = e.nummer; von = e.gueltigVon; wert = e.dauerWert
+                        einheit = e.dauerEinheit.ifBlank { "J" }; bis = e.gueltigBis; notiz = e.notiz; dateien = e.dateien; neu = emptyList(); offen = true
+                    }
+                    Kachel(e.art, e.gueltigBis, mod, onBearbeiten = ::bearbeiten, onLoeschen = { loeschen = e }) {
+                        if (e.inhaber.isNotBlank()) Mono(e.inhaber, p.textDim, 11.sp)
+                        if (e.nummer.isNotBlank()) Mono("Nr. " + e.nummer, p.textFaint, 10.5.sp)
+                        if (e.notiz.isNotBlank()) Fliesstext(e.notiz, p.textDim, 11.5.sp, zeilen = 2)
+                        AnhangVorschau(e.dateien, klein = true)
                     }
                 }
             }
