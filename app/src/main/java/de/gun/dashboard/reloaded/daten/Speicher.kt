@@ -61,6 +61,11 @@ object Speicher {
         }
     }
 
+    /** Nur für Vorschauen/Tests: Bestand setzen, ohne Datei. */
+    fun vorschau(d: AppDaten) {
+        _daten.value = d
+    }
+
     fun aendern(block: (AppDaten) -> AppDaten) {
         _daten.update(block)
         schreibenPlanen()

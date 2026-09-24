@@ -271,7 +271,7 @@ private fun Ebene(sichtbar: Boolean, inhalt: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Kopf(st: Steuerung) {
+internal fun Kopf(st: Steuerung) {
     val p = LocalPalette.current
     Box(Modifier.fillMaxWidth().height(64.dp)) {
         if (p.punktRaster) PunktRaster(Modifier.matchParentSize(), p.randLeise)
@@ -293,7 +293,7 @@ private fun Kopf(st: Steuerung) {
 }
 
 @Composable
-private fun ReiterLeiste(st: Steuerung) {
+internal fun ReiterLeiste(st: Steuerung) {
     val p = LocalPalette.current
     val liste = rememberLazyListState()
     LaunchedEffect(st.reiter) { liste.animateScrollToItem(maxOf(0, st.reiter.ordinal - 1)) }

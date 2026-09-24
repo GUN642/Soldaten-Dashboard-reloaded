@@ -49,6 +49,19 @@ jobs:
           echo "==== FEHLER ===="
           grep -E "^e: |error:|What went wrong|AAPT|resource .* not found" -A2 build.log | head -120 || true
 
+      - name: Bildschirmfotos erzeugen
+        continue-on-error: true
+        run: ./gradlew --no-daemon :app:recordPaparazziRelease 2>&1 | tail -40
+
+      - name: Bildschirmfotos ablegen
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bildschirmfotos
+          path: app/src/test/snapshots/images/*.png
+          if-no-files-found: ignore
+
       - name: Version ermitteln
         id: version
         run: |
