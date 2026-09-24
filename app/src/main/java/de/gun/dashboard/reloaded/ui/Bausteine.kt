@@ -94,11 +94,11 @@ fun Punkt(text: String, groesse: TextUnit = 22.sp, farbe: Color = LocalPalette.c
 
 /** Kleine Beschriftung in Versalien, Monoschrift. */
 @Composable
-fun Etikett(text: String, farbe: Color = LocalPalette.current.textFaint, modifier: Modifier = Modifier, groesse: TextUnit = 10.5.sp) {
+fun Etikett(text: String, farbe: Color = LocalPalette.current.textFaint, modifier: Modifier = Modifier, groesse: TextUnit = 10.5.sp, zeilen: Int = 1) {
     Text(
         text.uppercase(), modifier = modifier, color = farbe,
-        style = TextStyle(fontFamily = Schrift.mono, fontSize = groesse, letterSpacing = 1.4.sp, fontWeight = FontWeight.Bold),
-        maxLines = 1, overflow = TextOverflow.Ellipsis,
+        style = TextStyle(fontFamily = Schrift.mono, fontSize = groesse, letterSpacing = 1.4.sp, fontWeight = FontWeight.Bold, lineHeight = groesse * 1.3f),
+        maxLines = zeilen, overflow = TextOverflow.Ellipsis,
     )
 }
 
@@ -345,7 +345,7 @@ fun Kennzahl(wert: String, label: String, farbe: Color = LocalPalette.current.te
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(12.dp)
     ) {
         Punkt(wert, if (wert.length > 5) 20.sp else 26.sp, farbe)
-        Etikett(label)
+        Etikett(label, zeilen = 2)
     }
 }
 
@@ -387,10 +387,14 @@ fun Feld(
     rechts: (@Composable () -> Unit)? = null,
     beiVerlassen: (() -> Unit)? = null,
 ) {
+    var hatteFokus by remember { mutableStateOf(false) }
     OutlinedTextField(
         value = wert, onValueChange = onWert,
         modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)
-            .then(if (beiVerlassen != null) Modifier.onFocusChanged { if (!it.isFocused) beiVerlassen() } else Modifier),
+            .then(if (beiVerlassen != null) Modifier.onFocusChanged {
+                if (it.isFocused) hatteFokus = true
+                else if (hatteFokus) { hatteFokus = false; beiVerlassen() }
+            } else Modifier),
         label = { Text(label, fontFamily = Schrift.text, fontSize = 13.sp) },
         placeholder = { if (platzhalter.isNotEmpty()) Text(platzhalter, fontFamily = Schrift.text, fontSize = 14.sp) },
         singleLine = zeilen == 1, minLines = if (zeilen > 1) zeilen else 1,
@@ -412,6 +416,7 @@ fun ZeitFeld(wert: String, onWert: (String) -> Unit, label: String, modifier: Mo
 @Composable
 fun DatumFeld(wert: String, onWert: (String) -> Unit, label: String, modifier: Modifier = Modifier) {
     var zeigen by remember { mutableStateOf(false) }
+    var hatteFokus by remember { mutableStateOf(false) }
     var feld by remember { mutableStateOf(TextFieldValue(wert, TextRange(wert.length))) }
     if (feld.text != wert) feld = TextFieldValue(wert, TextRange(wert.length))
     OutlinedTextField(
@@ -429,7 +434,9 @@ fun DatumFeld(wert: String, onWert: (String) -> Unit, label: String, modifier: M
             onWert(ergebnis)
         },
         modifier = modifier.fillMaxWidth().padding(vertical = 4.dp).onFocusChanged {
-            if (!it.isFocused) {
+            if (it.isFocused) hatteFokus = true
+            else if (hatteFokus) {
+                hatteFokus = false
                 val z = wert.filter { c -> c.isDigit() }
                 if (z.length == 6) onWert(z.substring(0, 2) + "." + z.substring(2, 4) + ".20" + z.substring(4))
             }

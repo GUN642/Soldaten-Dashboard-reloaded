@@ -43,11 +43,14 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
 
+      - name: Logik-Tests
+        run: ./gradlew --no-daemon :app:testReleaseUnitTest --tests '*LogikTest*' 2>&1 | tee -a build.log | tail -25
+
       - name: Fehler zusammenfassen
         if: failure()
         run: |
           echo "==== FEHLER ===="
-          grep -E "^e: |error:|What went wrong|AAPT|resource .* not found" -A2 build.log | head -120 || true
+          grep -E "^e: |error:|What went wrong|AAPT|resource .* not found|FAILED|AssertionError|expected" -A2 build.log | head -120 || true
 
       - name: Bildschirmfotos erzeugen
         continue-on-error: true
