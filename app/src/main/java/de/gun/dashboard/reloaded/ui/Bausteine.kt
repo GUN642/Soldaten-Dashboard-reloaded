@@ -391,6 +391,7 @@ private val FELD_TEXT @Composable get() = TextStyle(fontFamily = Schrift.text, f
  * Material-Standardfeld (56 dp). Ein Symbol rechts wird überlagert statt über den
  * Trailing-Slot eingesetzt, der sonst 48 dp Mindesthöhe erzwingt.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FeldRahmen(
     text: String,
