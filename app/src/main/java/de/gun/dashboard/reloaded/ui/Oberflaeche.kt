@@ -116,6 +116,9 @@ fun Oberflaeche(aktivitaet: MainActivity) {
     }
 }
 
+/** Verhindert eine erneute Update-Prüfung, wenn die Activity z. B. beim Drehen neu aufgebaut wird. */
+private var updateGeprueft = false
+
 @Composable
 private fun Gesamt(aktivitaet: MainActivity, st: Steuerung) {
     val p = LocalPalette.current
@@ -154,13 +157,14 @@ private fun Gesamt(aktivitaet: MainActivity, st: Steuerung) {
         }
     }
 
-    // Update-Prüfung höchstens alle zwei Tage, Sicherungs-Erinnerung höchstens alle sieben Tage
+    // Update-Prüfung bei jedem App-Start (einmal je Prozess), Sicherungs-Erinnerung höchstens alle sieben Tage
     var update by remember { mutableStateOf<UpdateInfo?>(null) }
     var sicherungFrage by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(2500)
         val u = Speicher.aktuell.update
-        if (System.currentTimeMillis() - u.letztePruefung > 2L * 24 * 3600 * 1000) {
+        if (!updateGeprueft) {
+            updateGeprueft = true
             Speicher.aendern { it.copy(update = it.update.copy(letztePruefung = System.currentTimeMillis())) }
             try {
                 val info = UpdateDienst.pruefen(u.repo)
