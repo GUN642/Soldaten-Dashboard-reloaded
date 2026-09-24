@@ -266,6 +266,10 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.1.0" to listOf(
+        "Neu: Android Auto (erste Testversion) – Wetter heute, Termine heute & morgen, Aufgaben heute.",
+        "Hinweis: Die App ist nicht über den Play Store freigegeben; in Android Auto über AAEnabler bzw. „Unbekannte Quellen“ im Entwicklermodus freischalten.",
+    ),
     "1.0.5" to listOf(
         "Termine des gewählten Tages erscheinen wieder sichtbar – als Einblendung am unteren Rand über dem Kalender, mit + zum Anlegen.",
     ),
