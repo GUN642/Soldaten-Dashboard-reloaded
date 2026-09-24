@@ -275,7 +275,7 @@ private fun MonatsRaster(monat: LocalDate, b: de.gun.dashboard.reloaded.logik.Te
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxSize()) {
                                 if (!ganz) Box(Modifier.width(3.dp).fillMaxHeight().background(farbe))
                                 Text(
-                                    bk.termin.titel, color = if (ganz) textAuf(farbe) else p.text, maxLines = 1, overflow = TextOverflow.Clip,
+                                    bk.termin.titel, color = if (ganz) textAuf(farbe) else p.text, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip,
                                     modifier = Modifier.padding(horizontal = 3.dp),
                                     style = TextStyle(fontFamily = Schrift.text, fontSize = (9.5f * skala).sp, fontWeight = FontWeight.Medium, lineHeight = (11 * skala).sp)
                                 )

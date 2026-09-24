@@ -126,9 +126,9 @@ fun HeuteSeite() {
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Kennzahl(zahl(urlaub.rest) + " T", "Resturlaub",
+                Kennzahl(zahl(urlaub.rest), "Urlaub · Tage",
                     if (urlaub.rest <= 0) p.rot else if (urlaub.rest <= 5) p.warn else p.text, Modifier.weight(1f)) { st.reiter = Reiter.URLAUB }
-                Kennzahl(mitVorzeichen(saldo) + " h", "Mehrarbeit", if (saldo < 0) p.rot else p.text, Modifier.weight(1f)) { st.reiter = Reiter.URLAUB }
+                Kennzahl(mitVorzeichen(saldo), "Mehrarbeit · h", if (saldo < 0) p.rot else p.text, Modifier.weight(1f)) { st.reiter = Reiter.URLAUB }
                 Kennzahl(warn.toString() + if (ab > 0) "+$ab" else "", "Fristen",
                     if (ab > 0) p.rot else if (warn > 0) p.warn else p.gruen, Modifier.weight(1f)) { st.reiter = Reiter.LEHRGAENGE }
             }

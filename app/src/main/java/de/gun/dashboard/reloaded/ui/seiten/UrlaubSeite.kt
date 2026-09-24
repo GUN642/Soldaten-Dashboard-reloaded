@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -83,7 +84,7 @@ fun UrlaubSeite() {
                 Kennzahl(mitVorzeichen(saldo), "Mehrarbeit (Std)", if (saldo < 0) p.rot else if (saldo == 0.0) p.textDim else p.gruen, Modifier.weight(1f))
             }
             if (stand.restGeplant != stand.rest) Mono("inkl. geplant: ${zahl(stand.restGeplant)} Tage", if (stand.restGeplant < 0) p.rot else p.neutral, 12.sp,
-                Modifier.then(Modifier))
+                Modifier.padding(start = 6.dp, top = 6.dp))
         } }
         item {
             Karte("Urlaubskonto", "01") {

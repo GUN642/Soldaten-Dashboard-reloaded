@@ -79,7 +79,7 @@ val RUND_KLEIN = RoundedCornerShape(12.dp)
 // ------------------------------------------------------------------ Texte
 
 @Composable
-fun Punkt(text: String, groesse: TextUnit = 22.sp, farbe: Color = LocalPalette.current.text, modifier: Modifier = Modifier, fett: Boolean = true) {
+fun Punkt(text: String, groesse: TextUnit = 22.sp, farbe: Color = LocalPalette.current.text, modifier: Modifier = Modifier, fett: Boolean = true, zeilen: Int = 1) {
     val p = LocalPalette.current
     Text(
         text, modifier = modifier, color = farbe,
@@ -88,7 +88,7 @@ fun Punkt(text: String, groesse: TextUnit = 22.sp, farbe: Color = LocalPalette.c
             fontWeight = if (fett) FontWeight.ExtraBold else FontWeight.SemiBold,
             letterSpacing = if (p.punktSchrift) 1.sp else 0.sp,
         ),
-        maxLines = 1, overflow = TextOverflow.Ellipsis,
+        maxLines = zeilen, overflow = TextOverflow.Ellipsis,
     )
 }
 
@@ -163,7 +163,7 @@ fun Karte(
                     Mono(index, p.akzent, 12.sp, fett = true)
                     Spacer(Modifier.width(8.dp))
                 }
-                Punkt(titel.uppercase(), 17.sp, modifier = Modifier.weight(1f))
+                Punkt(titel.uppercase(), 17.sp, modifier = Modifier.weight(1f), zeilen = 2)
                 if (aktion != null) Row(verticalAlignment = Alignment.CenterVertically, content = aktion)
             }
         }
@@ -344,7 +344,7 @@ fun Kennzahl(wert: String, label: String, farbe: Color = LocalPalette.current.te
         modifier.clip(RUND_KLEIN).background(p.panelAlt).border(1.dp, p.randLeise, RUND_KLEIN)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(12.dp)
     ) {
-        Punkt(wert, 26.sp, farbe)
+        Punkt(wert, if (wert.length > 5) 20.sp else 26.sp, farbe)
         Etikett(label)
     }
 }

@@ -68,7 +68,22 @@ class Bildschirmfotos {
         ReloadedTheme(Design(thema = thema)) {
             val scope = rememberCoroutineScope()
             val st = remember { Steuerung(scope, SnackbarHostState()).also { it.reiter = reiter } }
-            CompositionLocalProvider(LocalSteuerung provides st) {
+            val registerOwner = remember {
+                object : androidx.activity.result.ActivityResultRegistryOwner {
+                    override val activityResultRegistry = object : androidx.activity.result.ActivityResultRegistry() {
+                        override fun <I, O> onLaunch(
+                            requestCode: Int,
+                            contract: androidx.activity.result.contract.ActivityResultContract<I, O>,
+                            input: I,
+                            options: androidx.core.app.ActivityOptionsCompat?,
+                        ) {}
+                    }
+                }
+            }
+            CompositionLocalProvider(
+                LocalSteuerung provides st,
+                androidx.activity.compose.LocalActivityResultRegistryOwner provides registerOwner,
+            ) {
                 Column(Modifier.fillMaxSize().background(LocalPalette.current.bg)) {
                     Kopf(st)
                     ReiterLeiste(st)
