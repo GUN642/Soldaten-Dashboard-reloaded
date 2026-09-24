@@ -100,6 +100,13 @@ class Bildschirmfotos {
     @Test fun heute() { foto("heute", "nothing", Reiter.HEUTE) { HeuteSeite() }; foto("heute", "nothing-light", Reiter.HEUTE) { HeuteSeite() } }
     @Test fun heuteGraphit() { foto("heute", "graphit", Reiter.HEUTE) { HeuteSeite() }; foto("heute", "aulumu", Reiter.HEUTE) { HeuteSeite() } }
     @Test fun kalender() { foto("kalender", "nothing", Reiter.KALENDER) { KalenderSeite() } }
+    @Test fun kalenderTag() {
+        foto("kalendertag", "nothing", Reiter.KALENDER) {
+            val st = LocalSteuerung.current
+            remember { st.kalenderTag = LocalDate.now(); true }
+            KalenderSeite()
+        }
+    }
     @Test fun todo() { foto("todo", "nothing", Reiter.TODO) { AufgabenSeite() } }
     @Test fun notizen() { foto("notizen", "nothing", Reiter.NOTIZEN) { NotizenSeite() } }
     @Test fun urlaub() { foto("urlaub", "nothing", Reiter.URLAUB) { UrlaubSeite() } }

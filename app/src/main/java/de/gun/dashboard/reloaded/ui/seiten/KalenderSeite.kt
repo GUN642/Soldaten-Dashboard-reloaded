@@ -1,5 +1,12 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.draw.shadow
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.tween
@@ -189,12 +196,25 @@ fun KalenderSeite() {
             ) { seite ->
                 MonatsRaster(monatZuSeite(anker, seite), b, skala, st.kalenderGross, rasterMin, cache, seite == pager.currentPage)
             }
-            if (!st.kalenderGross) {
-                st.kalenderTag?.let { tag -> TagesDetail(tag, b) }
-                Spacer(Modifier.height(96.dp))
+        }
+        // Termine des gewählten Tages als Einblendung am unteren Rand – unabhängig von der Rasterhöhe immer sichtbar
+        val gewaehlterTag = st.kalenderTag
+        var zuletztTag by remember { mutableStateOf(gewaehlterTag) }
+        if (gewaehlterTag != null) zuletztTag = gewaehlterTag
+        val panelOffen = gewaehlterTag != null && !st.kalenderGross
+        AnimatedVisibility(
+            visible = panelOffen,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            enter = slideInVertically(tween(200)) { it } + fadeIn(tween(200)),
+            exit = slideOutVertically(tween(160)) { it } + fadeOut(tween(160)),
+        ) {
+            zuletztTag?.let { tag ->
+                Box(Modifier.fillMaxWidth().heightIn(max = maxHeight * 0.55f).navigationBarsPadding().verticalScroll(rememberScrollState())) {
+                    TagesDetail(tag, b)
+                }
             }
         }
-        FloatingActionButton(
+        if (!panelOffen) FloatingActionButton(
             onClick = { st.maske = MaskeStart(datum = st.kalenderTag ?: LocalDate.now()) },
             containerColor = p.akzent, contentColor = textAuf(p.akzent),
             shape = CircleShape,
@@ -344,9 +364,10 @@ private fun TagesDetail(tag: LocalDate, b: de.gun.dashboard.reloaded.logik.Termi
     val st = LocalSteuerung.current
     val d = b.daten
     val liste = remember(b, tag) { de.gun.dashboard.reloaded.logik.termineAm(b, tag, true) }
-    Box(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+    Box(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
         Karte(
             titel = null,
+            modifier = Modifier.shadow(16.dp, RUND),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -356,6 +377,7 @@ private fun TagesDetail(tag: LocalDate, b: de.gun.dashboard.reloaded.logik.Termi
                             .joinToString(" · "), p.textDim, 11.sp
                     )
                 }
+                Symbol("+", p.akzent) { st.maske = MaskeStart(datum = tag) }
                 Symbol("✕") { st.kalenderTag = null }
             }
             Spacer(Modifier.height(8.dp))

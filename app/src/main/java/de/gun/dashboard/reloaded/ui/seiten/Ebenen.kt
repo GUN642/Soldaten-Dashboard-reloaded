@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.0.5" to listOf(
+        "Termine des gewählten Tages erscheinen wieder sichtbar – als Einblendung am unteren Rand über dem Kalender, mit + zum Anlegen.",
+    ),
     "1.0.4" to listOf(
         "Kalender blättert flüssig: Der Monat folgt dem Finger, schon kurzes Wischen reicht.",
         "Termine der Nachbarmonate werden im Hintergrund vorberechnet und zwischengespeichert – kein Ruckeln beim Wechsel.",
