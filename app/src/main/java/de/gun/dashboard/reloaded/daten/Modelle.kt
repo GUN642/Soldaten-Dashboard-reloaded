@@ -373,6 +373,8 @@ data class Design(
     val akzent: String = "rot",
     val punktSchrift: Boolean = true,
     val punktRaster: Boolean = true,
+    /** Reiterleiste unten statt oben. */
+    val reiterUnten: Boolean = false,
 )
 
 @Serializable

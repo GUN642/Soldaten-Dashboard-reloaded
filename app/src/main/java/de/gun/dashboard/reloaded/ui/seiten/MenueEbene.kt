@@ -176,6 +176,7 @@ fun MenueEbene() {
                     Knopfreihe {
                         Pille("Punktschrift", d.design.punktSchrift) { Speicher.aendern { it.copy(design = it.design.copy(punktSchrift = !it.design.punktSchrift)) } }
                         Pille("Punktraster", d.design.punktRaster) { Speicher.aendern { it.copy(design = it.design.copy(punktRaster = !it.design.punktRaster)) } }
+                        Pille("Reiterleiste unten", d.design.reiterUnten) { Speicher.aendern { it.copy(design = it.design.copy(reiterUnten = !it.design.reiterUnten)) } }
                     }
                 }
             }

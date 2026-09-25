@@ -1,5 +1,7 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.geometry.Offset
@@ -115,8 +117,8 @@ fun HeuteSeite() {
             Box(Modifier.fillMaxWidth().clip(RUND).background(p.panel).border(1.dp, p.rand, RUND)) {
                 if (p.punktRaster) PunktRaster(Modifier.matchParentSize(), p.randLeise, 11.dp)
                 Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Etikett(heute.lang())
-                    Punkt(zwei(jetzt.hour) + ":" + zwei(jetzt.minute), 52.sp)
+                    Punkt(heute.lang().uppercase(), 17.sp)
+                    Abstand(4.dp)
                     Mono("KW " + kalenderwoche(heute), p.akzent, 13.sp, fett = true)
                     Feiertage.name(heute, d.feiertagsLand.land)?.let { Mono(it, p.textDim, 11.sp) }
                     Feiertage.ferien(heute, d.ferien)?.let { Mono(it, p.textDim, 11.sp) }
@@ -124,12 +126,13 @@ fun HeuteSeite() {
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Alle drei Kacheln gleich hoch
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Kennzahl(zahl(urlaub.rest), "Resturlaub Tage",
-                    if (urlaub.rest <= 0) p.rot else if (urlaub.rest <= 5) p.warn else p.text, Modifier.weight(1f)) { st.reiter = Reiter.URLAUB }
-                Kennzahl(mitVorzeichen(saldo), "Mehrarbeit Std", if (saldo < 0) p.rot else p.text, Modifier.weight(1f)) { st.reiter = Reiter.URLAUB }
+                    if (urlaub.rest <= 0) p.rot else if (urlaub.rest <= 5) p.warn else p.text, Modifier.weight(1f).fillMaxHeight()) { st.reiter = Reiter.URLAUB }
+                Kennzahl(mitVorzeichen(saldo), "Mehrarbeit Std", if (saldo < 0) p.rot else p.text, Modifier.weight(1f).fillMaxHeight()) { st.reiter = Reiter.URLAUB }
                 Kennzahl(warn.toString() + if (ab > 0) "+$ab" else "", "Fristen",
-                    if (ab > 0) p.rot else if (warn > 0) p.warn else p.gruen, Modifier.weight(1f)) { st.reiter = Reiter.LEHRGAENGE }
+                    if (ab > 0) p.rot else if (warn > 0) p.warn else p.gruen, Modifier.weight(1f).fillMaxHeight()) { st.reiter = Reiter.LEHRGAENGE }
             }
         }
         item {

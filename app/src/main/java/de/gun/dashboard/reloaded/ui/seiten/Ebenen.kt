@@ -266,6 +266,11 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.1.3" to listOf(
+        "HEUTE: Uhrzeit entfernt, Datum groß mit KW.",
+        "HEUTE: Resturlaub, Mehrarbeit und Fristen sind gleich groß.",
+        "Neue Option unter Menü › Darstellung: „Reiterleiste unten“.",
+    ),
     "1.1.2" to listOf(
         "Open-Meteo-Wetter: je Tag drei Symbole für morgens, mittags und abends (jeweils das ungünstigste Wetter im Zeitraum, abends nach Sonnenuntergang Mond statt Sonne).",
     ),

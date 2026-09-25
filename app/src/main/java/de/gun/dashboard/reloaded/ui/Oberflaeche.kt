@@ -1,5 +1,7 @@
 package de.gun.dashboard.reloaded.ui
 
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.consumeWindowInsets
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -206,13 +208,19 @@ private fun Gesamt(aktivitaet: MainActivity, st: Steuerung) {
                 }
             }
             Column(Modifier.fillMaxSize().statusBarsPadding()) {
+                val leisteUnten = daten.design.reiterUnten
                 AnimatedVisibility(!vollbild, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                     Column {
                         Kopf(st)
-                        ReiterLeiste(st)
+                        if (!leisteUnten) ReiterLeiste(st)
                     }
                 }
-                Box(Modifier.weight(1f).fillMaxWidth().imePadding()) {
+                Box(
+                    Modifier.weight(1f).fillMaxWidth()
+                        // Leiste unten übernimmt den Abstand zur Navigationsleiste
+                        .then(if (leisteUnten && !vollbild) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier)
+                        .imePadding()
+                ) {
                     when (st.reiter) {
                         Reiter.HEUTE -> HeuteSeite()
                         Reiter.KALENDER -> KalenderSeite()
@@ -224,6 +232,9 @@ private fun Gesamt(aktivitaet: MainActivity, st: Steuerung) {
                         Reiter.AKTE -> AkteSeite()
                         Reiter.TOOLS -> ToolsSeite()
                     }
+                }
+                AnimatedVisibility(leisteUnten && !vollbild, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                    ReiterLeiste(st, unten = true)
                 }
             }
 
@@ -315,11 +326,12 @@ internal fun Kopf(st: Steuerung) {
 }
 
 @Composable
-internal fun ReiterLeiste(st: Steuerung) {
+internal fun ReiterLeiste(st: Steuerung, unten: Boolean = false) {
     val p = LocalPalette.current
     val liste = rememberLazyListState()
     LaunchedEffect(st.reiter) { liste.animateScrollToItem(maxOf(0, st.reiter.ordinal - 1)) }
-    Column {
+    Column(if (unten) Modifier.background(p.bg).navigationBarsPadding() else Modifier) {
+        if (unten) Box(Modifier.fillMaxWidth().height(1.dp).background(p.randLeise))
         LazyRow(
             state = liste,
             contentPadding = PaddingValues(horizontal = 12.dp),
@@ -338,7 +350,7 @@ internal fun ReiterLeiste(st: Steuerung) {
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.randLeise))
+        if (!unten) Box(Modifier.fillMaxWidth().height(1.dp).background(p.randLeise))
     }
 }
 
