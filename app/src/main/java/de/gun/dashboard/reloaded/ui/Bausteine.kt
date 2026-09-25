@@ -63,6 +63,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -118,8 +119,10 @@ fun Fliesstext(text: String, farbe: Color = LocalPalette.current.text, groesse: 
 }
 
 @Composable
-fun Mono(text: String, farbe: Color = LocalPalette.current.textDim, groesse: TextUnit = 12.sp, modifier: Modifier = Modifier, fett: Boolean = false) {
-    Text(text, modifier = modifier, color = farbe, style = TextStyle(fontFamily = Schrift.mono, fontSize = groesse, fontWeight = if (fett) FontWeight.Bold else FontWeight.Normal))
+fun Mono(text: String, farbe: Color = LocalPalette.current.textDim, groesse: TextUnit = 12.sp, modifier: Modifier = Modifier, fett: Boolean = false, zentriert: Boolean = false) {
+    Text(text, modifier = modifier, color = farbe, maxLines = if (zentriert) 1 else Int.MAX_VALUE,
+        style = TextStyle(fontFamily = Schrift.mono, fontSize = groesse, fontWeight = if (fett) FontWeight.Bold else FontWeight.Normal,
+            textAlign = if (zentriert) TextAlign.Center else TextAlign.Unspecified))
 }
 
 @Composable

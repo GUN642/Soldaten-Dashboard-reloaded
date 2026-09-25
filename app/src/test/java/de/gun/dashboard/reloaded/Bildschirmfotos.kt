@@ -10,6 +10,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import de.gun.dashboard.reloaded.daten.*
@@ -105,6 +107,22 @@ class Bildschirmfotos {
             val st = LocalSteuerung.current
             remember { st.kalenderTag = LocalDate.now(); true }
             KalenderSeite()
+        }
+    }
+    @Test fun wetter() {
+        val heute = LocalDate.now()
+        val codes = listOf(0, 1, 2, 3, 45, 61, 80, 95, 71, 51)
+        val stunden = (0 until 7 * 24).map { h ->
+            val z = heute.atStartOfDay().plusHours(h.toLong())
+            de.gun.dashboard.reloaded.netz.WetterStunde(z.toString(), 8.0 + (h % 24) / 2.0, codes[(h / 5) % codes.size], (h * 7) % 60, 0.0)
+        }
+        val tage = (0 until 7).map { d ->
+            de.gun.dashboard.reloaded.netz.WetterTag(heute.plusDays(d.toLong()).toString(), codes[d % codes.size], 20.0 + d, 5.0 + d, (d * 15) % 80, 0.0,
+                heute.plusDays(d.toLong()).atTime(7, 10).toString(), heute.plusDays(d.toLong()).atTime(19, 5).toString())
+        }
+        val w = de.gun.dashboard.reloaded.netz.Wetter("Illerrieden", 12.0, 10.0, 45, 5.0, 80.0, stunden, tage, 0L)
+        foto("wetter", "nothing", Reiter.HEUTE) {
+            androidx.compose.foundation.layout.Column(Modifier.padding(14.dp)) { Karte("Wetter", "03") { WetterAnzeige(w) } }
         }
     }
     @Test fun todo() { foto("todo", "nothing", Reiter.TODO) { AufgabenSeite() } }

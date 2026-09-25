@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.1.2" to listOf(
+        "Open-Meteo-Wetter: je Tag drei Symbole für morgens, mittags und abends (jeweils das ungünstigste Wetter im Zeitraum, abends nach Sonnenuntergang Mond statt Sonne).",
+    ),
     "1.1.1" to listOf(
         "Android Auto: Termin mit Ort antippen startet die Navigation.",
         "meteoblue-Wetter: kein weißer Bereich mehr unten, Höhe passt sich dem Inhalt an.",

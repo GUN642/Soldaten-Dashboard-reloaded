@@ -279,16 +279,20 @@ private fun WetterKarte() {
     }
 }
 
+/** Zeitfenster für die Tagesübersicht: morgens, mittags, abends. */
+private val TAGESZEITEN = listOf("morgens" to 6..10, "mittags" to 11..16, "abends" to 17..21)
+
 /**
  * Wettersymbol als Emoji. Das Nebel-Emoji wird von vielen Schriften als eckiges Bild gezeichnet;
  * Nebel daher als Wolke mit gezeichneten Nebelstreifen.
  */
 @Composable
-private fun WetterSymbol(code: Int?, groesse: TextUnit, modifier: Modifier = Modifier) {
+private fun WetterSymbol(code: Int?, groesse: TextUnit, modifier: Modifier = Modifier, nacht: Boolean = false, mittig: Boolean = false) {
     val nebel = code == 45 || code == 48
-    Box(modifier, contentAlignment = Alignment.CenterStart) {
+    val zeichen = if (nacht && (code == 0 || code == 1)) "🌙" else WetterDienst.zeichen(code)
+    Box(modifier, contentAlignment = if (mittig) Alignment.Center else Alignment.CenterStart) {
         Box {
-            Fliesstext(WetterDienst.zeichen(code), groesse = groesse)
+            Fliesstext(zeichen, groesse = groesse)
             if (nebel) {
                 val farbe = LocalPalette.current.textDim
                 Canvas(Modifier.matchParentSize()) {
@@ -304,7 +308,7 @@ private fun WetterSymbol(code: Int?, groesse: TextUnit, modifier: Modifier = Mod
 }
 
 @Composable
-private fun WetterAnzeige(w: Wetter) {
+internal fun WetterAnzeige(w: Wetter) {
     val p = LocalPalette.current
     Row(verticalAlignment = Alignment.CenterVertically) {
         WetterSymbol(w.code, 40.sp)
@@ -338,12 +342,29 @@ private fun WetterAnzeige(w: Wetter) {
         }
     }
     Abstand(10.dp)
+    // Tagesübersicht mit je einem Symbol für morgens, mittags und abends
+    val nachStunde = remember(w) {
+        w.stunden.mapNotNull { s -> runCatching { LocalDateTime.parse(s.zeit) }.getOrNull()?.let { it to s } }
+    }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.width(70.dp))
+        TAGESZEITEN.forEach { (name, _) -> Mono(name, p.textFaint, 9.sp, Modifier.width(40.dp), zentriert = true) }
+    }
     w.tage.forEachIndexed { i, t ->
         val tag = runCatching { LocalDate.parse(t.datum) }.getOrNull()
+        val untergang = runCatching { LocalDateTime.parse(t.untergang ?: "") }.getOrNull()?.hour ?: 19
         Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
             Mono(if (i == 0) "Heute" else tag?.let { de.gun.dashboard.reloaded.logik.WOCHENTAGE[it.dayOfWeek.value - 1] + " " + zwei(it.dayOfMonth) + "." } ?: "",
                 p.text, 12.sp, Modifier.width(70.dp), fett = i == 0)
-            WetterSymbol(t.code, 18.sp, Modifier.width(34.dp))
+            TAGESZEITEN.forEach { (_, stunden) ->
+                // ungünstigstes Wetter im Zeitfenster (höherer WMO-Code = schlechteres Wetter)
+                val code = if (tag == null) null else nachStunde
+                    .filter { (z, _) -> z.toLocalDate() == tag && z.hour in stunden }
+                    .mapNotNull { it.second.code }.maxOrNull()
+                if (code == null) Spacer(Modifier.width(40.dp))
+                else WetterSymbol(code, 17.sp, Modifier.width(40.dp), nacht = stunden.first + 2 >= untergang, mittig = true)
+            }
+            Spacer(Modifier.width(6.dp))
             Mono(if ((t.regenWkt ?: 0) > 0) "${t.regenWkt} %" else "", p.neutral, 11.sp, Modifier.weight(1f))
             Mono((t.max?.let { Math.round(it).toString() } ?: "—") + "° / " + (t.min?.let { Math.round(it).toString() } ?: "—") + "°", p.text, 12.sp)
         }
