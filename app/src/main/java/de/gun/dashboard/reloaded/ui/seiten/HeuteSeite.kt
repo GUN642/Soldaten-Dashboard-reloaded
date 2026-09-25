@@ -1,5 +1,9 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.Canvas
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -241,10 +245,28 @@ private fun WetterKarte() {
             Abstand()
         }
         if (dash.quelle == "meteoblue" && dash.wetterUrl.isNotBlank()) {
+            // Höhe an den tatsächlichen Inhalt anpassen, Hintergrund transparent – sonst bleibt unten ein weißer Rest
+            var hoehe by remember(dash.wetterUrl) { mutableStateOf(500) }
             AndroidView(
-                factory = { c -> WebView(c).apply { settings.javaScriptEnabled = true; webViewClient = WebViewClient(); loadUrl(dash.wetterUrl) } },
+                factory = { c ->
+                    WebView(c).apply {
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        settings.javaScriptEnabled = true
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView, url: String?) {
+                                view.evaluateJavascript(
+                                    "(function(){document.documentElement.style.background='transparent';" +
+                                        "document.body.style.background='transparent';document.body.style.margin='0';" +
+                                        "var h=0;var k=document.body.children;for(var i=0;i<k.length;i++){var r=k[i].getBoundingClientRect();" +
+                                        "h=Math.max(h,r.bottom+window.scrollY);}return Math.ceil(h||document.body.scrollHeight);})()"
+                                ) { r -> r?.trim('"')?.toDoubleOrNull()?.let { if (it > 50) hoehe = it.toInt() } }
+                            }
+                        }
+                        loadUrl(dash.wetterUrl)
+                    }
+                },
                 update = { if (neuZaehler > 0) it.reload() },
-                modifier = Modifier.fillMaxWidth().height(500.dp).clip(RUND_KLEIN),
+                modifier = Modifier.fillMaxWidth().height(hoehe.dp).clip(RUND_KLEIN),
             )
             return@Karte
         }
@@ -257,11 +279,35 @@ private fun WetterKarte() {
     }
 }
 
+/**
+ * Wettersymbol als Emoji. Das Nebel-Emoji wird von vielen Schriften als eckiges Bild gezeichnet;
+ * Nebel daher als Wolke mit gezeichneten Nebelstreifen.
+ */
+@Composable
+private fun WetterSymbol(code: Int?, groesse: TextUnit, modifier: Modifier = Modifier) {
+    val nebel = code == 45 || code == 48
+    Box(modifier, contentAlignment = Alignment.CenterStart) {
+        Box {
+            Fliesstext(WetterDienst.zeichen(code), groesse = groesse)
+            if (nebel) {
+                val farbe = LocalPalette.current.textDim
+                Canvas(Modifier.matchParentSize()) {
+                    val dicke = size.height * 0.07f
+                    listOf(0.72f, 0.86f).forEachIndexed { i, y ->
+                        val einzug = size.width * (0.08f + i * 0.12f)
+                        drawLine(farbe, Offset(einzug, size.height * y), Offset(size.width - einzug * 0.6f, size.height * y), dicke, StrokeCap.Round)
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun WetterAnzeige(w: Wetter) {
     val p = LocalPalette.current
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Fliesstext(WetterDienst.zeichen(w.code), groesse = 40.sp)
+        WetterSymbol(w.code, 40.sp)
         Spacer(Modifier.width(10.dp))
         Punkt((w.grad?.let { Math.round(it).toString() } ?: "—") + "°", 46.sp)
         Spacer(Modifier.weight(1f))
@@ -285,7 +331,7 @@ private fun WetterAnzeige(w: Wetter) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Mono(zeit?.let { zwei(it.hour) } ?: "", p.textFaint, 10.sp)
-                Fliesstext(WetterDienst.zeichen(s.code), groesse = 18.sp)
+                WetterSymbol(s.code, 18.sp)
                 Mono((s.grad?.let { Math.round(it).toString() } ?: "—") + "°", p.text, 12.sp, fett = true)
                 Mono(if ((s.regenWkt ?: 0) > 0) "${s.regenWkt}%" else if ((s.regenMm ?: 0.0) > 0) String.format("%.1f", s.regenMm) else " ", p.neutral, 9.sp)
             }
@@ -297,7 +343,7 @@ private fun WetterAnzeige(w: Wetter) {
         Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
             Mono(if (i == 0) "Heute" else tag?.let { de.gun.dashboard.reloaded.logik.WOCHENTAGE[it.dayOfWeek.value - 1] + " " + zwei(it.dayOfMonth) + "." } ?: "",
                 p.text, 12.sp, Modifier.width(70.dp), fett = i == 0)
-            Fliesstext(WetterDienst.zeichen(t.code), groesse = 18.sp, modifier = Modifier.width(34.dp))
+            WetterSymbol(t.code, 18.sp, Modifier.width(34.dp))
             Mono(if ((t.regenWkt ?: 0) > 0) "${t.regenWkt} %" else "", p.neutral, 11.sp, Modifier.weight(1f))
             Mono((t.max?.let { Math.round(it).toString() } ?: "—") + "° / " + (t.min?.let { Math.round(it).toString() } ?: "—") + "°", p.text, 12.sp)
         }

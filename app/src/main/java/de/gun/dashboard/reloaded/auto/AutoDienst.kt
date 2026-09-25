@@ -1,6 +1,7 @@
 package de.gun.dashboard.reloaded.auto
 
 import android.content.Intent
+import android.net.Uri
 import androidx.car.app.CarAppService
 import androidx.car.app.CarContext
 import androidx.car.app.CarToast
@@ -75,12 +76,24 @@ private fun zeitText(t: Termin, tag: LocalDate): String {
     return beginn + ende
 }
 
-private fun terminZeile(t: Termin, tag: LocalDate): Row =
-    Row.Builder()
+/** Termine mit Ort: Antippen startet die Navigation in der eingestellten Navi-App. */
+private fun terminZeile(ctx: CarContext, t: Termin, tag: LocalDate): Row {
+    val ort = t.ort.trim()
+    return Row.Builder()
         .setTitle(t.titel.ifBlank { "(ohne Titel)" })
-        .addText(listOf(zeitText(t, tag), t.ort).filter { it.isNotBlank() }.joinToString(" · "))
-        .apply { if (t.quelleName.isNotBlank()) addText(t.quelleName) }
+        .addText(listOf(zeitText(t, tag), if (ort.isNotEmpty()) "📍 $ort" else "").filter { it.isNotBlank() }.joinToString(" · "))
+        .addText(if (ort.isNotEmpty()) "Antippen: Navigation starten" else t.quelleName)
+        .apply {
+            if (ort.isNotEmpty()) setOnClickListener {
+                try {
+                    ctx.startCarApp(Intent(CarContext.ACTION_NAVIGATE, Uri.parse("geo:0,0?q=" + Uri.encode(ort))))
+                } catch (e: Exception) {
+                    CarToast.makeText(ctx, "Navigation konnte nicht gestartet werden", CarToast.LENGTH_LONG).show()
+                }
+            }
+        }
         .build()
+}
 
 private fun aufgabeZeile(a: Aufgabe): Row {
     val heute = LocalDate.now()
@@ -210,7 +223,7 @@ class TagScreen(ctx: CarContext, private val tag: LocalDate, private val titel: 
         val liste = ItemList.Builder()
         if (termine.isEmpty()) liste.addItem(leerZeile("Keine Termine"))
         val zeigen = if (termine.size > grenze) termine.take(grenze - 1) else termine
-        zeigen.forEach { liste.addItem(terminZeile(it, tag)) }
+        zeigen.forEach { liste.addItem(terminZeile(carContext, it, tag)) }
         if (termine.size > zeigen.size) liste.addItem(leerZeile("+ ${termine.size - zeigen.size} weitere in der App"))
         val datum = "%02d.%02d.".format(tag.dayOfMonth, tag.monthValue)
         return ListTemplate.Builder()

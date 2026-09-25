@@ -133,7 +133,7 @@ object WetterDienst {
 
     private val CODES = mapOf(
         0 to ("☀️" to "klar"), 1 to ("🌤️" to "überwiegend klar"), 2 to ("⛅" to "teils bewölkt"), 3 to ("☁️" to "bedeckt"),
-        45 to ("🌫️" to "Nebel"), 48 to ("🌫️" to "Reifnebel"),
+        45 to ("☁️" to "Nebel"), 48 to ("☁️" to "Reifnebel"),
         51 to ("🌦️" to "leichter Sprühregen"), 53 to ("🌦️" to "Sprühregen"), 55 to ("🌦️" to "starker Sprühregen"),
         56 to ("🌧️" to "gefrierender Sprühregen"), 57 to ("🌧️" to "gefrierender Sprühregen"),
         61 to ("🌦️" to "leichter Regen"), 63 to ("🌧️" to "Regen"), 65 to ("🌧️" to "starker Regen"),

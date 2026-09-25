@@ -266,6 +266,11 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.1.1" to listOf(
+        "Android Auto: Termin mit Ort antippen startet die Navigation.",
+        "meteoblue-Wetter: kein weißer Bereich mehr unten, Höhe passt sich dem Inhalt an.",
+        "Open-Meteo-Wetter: Nebel wird nicht mehr als eckiges Bild angezeigt.",
+    ),
     "1.1.0" to listOf(
         "Neu: Android Auto (erste Testversion) – Wetter heute, Termine heute & morgen, Aufgaben heute.",
         "Hinweis: Die App ist nicht über den Play Store freigegeben; in Android Auto über AAEnabler bzw. „Unbekannte Quellen“ im Entwicklermodus freischalten.",
