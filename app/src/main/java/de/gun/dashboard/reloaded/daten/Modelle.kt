@@ -227,6 +227,10 @@ data class Dashboard(
     val quelle: FText = "openmeteo",
     val ort: Ort = Ort(),
     val wetterGeleert: FBool = false,
+    /** Amtliche Warnungen des DWD für den Wetter-Ort anzeigen. */
+    val dwdWarnungen: FBool = true,
+    /** Benachrichtigung bei neuen Unwetterwarnungen. */
+    val dwdPush: FBool = true,
 )
 
 // ---------------- Akte ----------------

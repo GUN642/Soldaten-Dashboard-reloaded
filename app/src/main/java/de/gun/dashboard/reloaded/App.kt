@@ -21,6 +21,8 @@ class App : Application() {
         super.onCreate()
         Speicher.init(this)
         Erinnerungen.kanalAnlegen(this)
+        de.gun.dashboard.reloaded.erinnerung.Unwetter.kanalAnlegen(this)
+        de.gun.dashboard.reloaded.erinnerung.Unwetter.planen(this)
         Speicher.beiAenderung = { Aktualisierung.nachAenderung(this) }
         // Automatischer Urlaubszugang zum Jahreswechsel
         if (jahreswechsel(Speicher.aktuell) != Speicher.aktuell) Speicher.aendern { jahreswechsel(it) }

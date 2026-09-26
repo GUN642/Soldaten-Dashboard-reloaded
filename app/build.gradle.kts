@@ -8,8 +8,8 @@ plugins {
 
 // Versionsnummer an genau einer Stelle. Die Update-Prüfung vergleicht sie mit
 // dem neuesten Release auf GitHub.
-val appVersionName = "1.1.3"
-val appVersionCode = 10
+val appVersionName = "1.2.0"
+val appVersionCode = 11
 
 android {
     namespace = "de.gun.dashboard.reloaded"
@@ -79,6 +79,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.car.app:app:1.4.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")

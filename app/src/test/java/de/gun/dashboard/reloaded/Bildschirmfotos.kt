@@ -125,6 +125,19 @@ class Bildschirmfotos {
             androidx.compose.foundation.layout.Column(Modifier.padding(14.dp)) { Karte("Wetter", "03") { WetterAnzeige(w) } }
         }
     }
+    @Test fun unwetter() {
+        val jetzt = java.time.OffsetDateTime.now()
+        de.gun.dashboard.reloaded.netz.DwdWarnDienst.aktuell.value = listOf(
+            de.gun.dashboard.reloaded.netz.DwdWarnung("a", "Unwetter", 3, listOf("THUNDERSTORM", "HAIL"),
+                "Amtliche UNWETTERWARNUNG vor SCHWEREM GEWITTER mit HAGEL", "Es tritt ein schweres Gewitter auf.", "Schließen Sie Fenster und Türen!",
+                jetzt, jetzt.plusHours(4), "Gemeinde Illerrieden"),
+            de.gun.dashboard.reloaded.netz.DwdWarnung("b", "Sturmböen", 1, listOf("WIND"),
+                "Amtliche WARNUNG vor STURMBÖEN", "", "", jetzt, jetzt.plusHours(8), "Gemeinde Illerrieden"),
+        )
+        foto("unwetter", "nothing", Reiter.HEUTE) {
+            androidx.compose.foundation.layout.Column(Modifier.padding(14.dp)) { UnwetterKarte() }
+        }
+    }
     @Test fun todo() { foto("todo", "nothing", Reiter.TODO) { AufgabenSeite() } }
     @Test fun notizen() { foto("notizen", "nothing", Reiter.NOTIZEN) { NotizenSeite() } }
     @Test fun urlaub() { foto("urlaub", "nothing", Reiter.URLAUB) { UrlaubSeite() } }

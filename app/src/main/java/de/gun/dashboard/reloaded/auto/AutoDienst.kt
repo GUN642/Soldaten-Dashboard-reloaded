@@ -26,6 +26,7 @@ import de.gun.dashboard.reloaded.logik.Termin
 import de.gun.dashboard.reloaded.logik.hhmm
 import de.gun.dashboard.reloaded.logik.parseDE
 import de.gun.dashboard.reloaded.logik.termineAm
+import de.gun.dashboard.reloaded.netz.DwdWarnDienst
 import de.gun.dashboard.reloaded.netz.Wetter
 import de.gun.dashboard.reloaded.netz.WetterDienst
 import kotlinx.coroutines.Job
@@ -121,7 +122,7 @@ class UebersichtScreen(ctx: CarContext) : Screen(ctx) {
             override fun onCreate(owner: LifecycleOwner) {
                 // Änderungen an Daten oder Gerätekalender sofort übernehmen
                 lifecycleScope.launch {
-                    combine(Speicher.daten, GeraeteKalender.termine) { _, _ -> }.collect { invalidate() }
+                    combine(Speicher.daten, GeraeteKalender.termine, DwdWarnDienst.aktuell) { _, _, _ -> }.collect { invalidate() }
                 }
             }
             override fun onStart(owner: LifecycleOwner) { laden(false) }
@@ -133,6 +134,7 @@ class UebersichtScreen(ctx: CarContext) : Screen(ctx) {
         ladeJob = lifecycleScope.launch {
             launch { try { Aktualisierung.geraetLadenJetzt(carContext) } catch (e: Exception) { } }
             val dash = Speicher.aktuell.dashboard
+            if (dash.dwdWarnungen) launch { try { DwdWarnDienst.laden(dash.ort, neu) } catch (e: Exception) { } ; invalidate() }
             if (dash.quelle == "openmeteo") {
                 try {
                     AutoDaten.wetter = WetterDienst.laden(dash.ort, neu); AutoDaten.wetterFehler = null
@@ -179,6 +181,17 @@ class UebersichtScreen(ctx: CarContext) : Screen(ctx) {
         fun zahl(n: Int, eins: String, viele: String) = if (n == 1) "1 $eins" else "$n $viele"
 
         val liste = ItemList.Builder()
+        // Amtliche Warnung (höchste Stufe) ganz oben
+        val warnungen = if (Speicher.aktuell.dashboard.dwdWarnungen) DwdWarnDienst.aktuell.value.orEmpty() else emptyList()
+        warnungen.firstOrNull()?.let { w ->
+            liste.addItem(
+                Row.Builder()
+                    .setTitle("⚠ " + w.ueberschrift.ifBlank { w.stufeText + ": " + w.ereignis })
+                    .addText(listOf(w.zeitraum(), if (warnungen.size > 1) "+${warnungen.size - 1} weitere" else "").filter { it.isNotBlank() }.joinToString(" · "))
+                    .build()
+            )
+        }
+        val fertig = liste
             .addItem(wetterZeile())
             .addItem(einstieg("Heute", zahl(tHeute.size, "Termin", "Termine"), tHeute.map { kurz(it, heute) }) {
                 TagScreen(carContext, heute, "Heute")
@@ -194,7 +207,7 @@ class UebersichtScreen(ctx: CarContext) : Screen(ctx) {
         return ListTemplate.Builder()
             .setTitle("Soldaten Dashboard")
             .setHeaderAction(Action.APP_ICON)
-            .setSingleList(liste)
+            .setSingleList(fertig)
             .setActionStrip(
                 ActionStrip.Builder().addAction(
                     Action.Builder().setTitle("Aktualisieren").setOnClickListener {

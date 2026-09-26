@@ -1,5 +1,7 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import de.gun.dashboard.reloaded.ui.Pille
+import de.gun.dashboard.reloaded.erinnerung.Unwetter
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.ui.unit.TextUnit
@@ -135,6 +137,7 @@ fun HeuteSeite() {
                     if (ab > 0) p.rot else if (warn > 0) p.warn else p.gruen, Modifier.weight(1f).fillMaxHeight()) { st.reiter = Reiter.LEHRGAENGE }
             }
         }
+        item { UnwetterKarte() }
         item {
             Karte("Termine heute", "01", aktion = { Mono("${termine.size}", p.textDim) }) {
                 if (termine.isEmpty()) Leer("Keine Termine heute.")
@@ -393,7 +396,7 @@ private fun WetterEinstellungen(fertig: () -> Unit) {
     var url by remember { mutableStateOf(dash.wetterUrl) }
 
     fun ortSetzen(o: Ort) {
-        Speicher.aendern { it.copy(dashboard = it.dashboard.copy(ort = o, quelle = "openmeteo")) }
+        Speicher.aendern { it.copy(dashboard = it.dashboard.copy(ort = o)) }
         treffer = emptyList(); suche = ""; fertig()
     }
 
@@ -413,8 +416,8 @@ private fun WetterEinstellungen(fertig: () -> Unit) {
             Speicher.aendern { it.copy(dashboard = it.dashboard.copy(quelle = q)) }
         }
         Abstand(8.dp)
-        if (dash.quelle == "openmeteo") {
-            Hinweis("Aktuell: ${dash.ort.name} (${String.format("%.3f", dash.ort.breite)}, ${String.format("%.3f", dash.ort.laenge)})")
+        run {
+            Hinweis("Ort für Wetter und DWD-Warnungen: ${dash.ort.name} (${String.format("%.3f", dash.ort.breite)}, ${String.format("%.3f", dash.ort.laenge)})")
             Feld(suche, { suche = it }, "Ort suchen", platzhalter = "z. B. Ulm")
             Knopfreihe {
                 Knopf("Suchen", klein = true) {
@@ -433,7 +436,21 @@ private fun WetterEinstellungen(fertig: () -> Unit) {
             treffer.forEach { o ->
                 Fliesstext(o.name, modifier = Modifier.fillMaxWidth().clickable { ortSetzen(o) }.padding(vertical = 8.dp))
             }
-        } else {
+        }
+        Abstand(8.dp)
+        Knopfreihe {
+            Pille("DWD-Warnungen", dash.dwdWarnungen) {
+                Speicher.aendern { it.copy(dashboard = it.dashboard.copy(dwdWarnungen = !it.dashboard.dwdWarnungen)) }
+                Unwetter.planen(ctx)
+            }
+            if (dash.dwdWarnungen) Pille("Benachrichtigen", dash.dwdPush) {
+                Speicher.aendern { it.copy(dashboard = it.dashboard.copy(dwdPush = !it.dashboard.dwdPush)) }
+                Unwetter.planen(ctx)
+            }
+        }
+        Hinweis("Benachrichtigung bei Gewitter, Sturm, Hagel und Starkregen ab Stufe 2 (orange), bei allen anderen Warnungen ab Stufe 3 (Unwetter).")
+        if (dash.quelle == "meteoblue") {
+            Abstand(8.dp)
             Feld(url, { url = it }, "meteoblue-Widget-Adresse", platzhalter = "https://www.meteoblue.com/de/wetter/widget/…")
             Knopfreihe {
                 Knopf("Übernehmen", klein = true) {
