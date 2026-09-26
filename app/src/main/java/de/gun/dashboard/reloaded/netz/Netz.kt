@@ -167,7 +167,7 @@ object FerienDienst {
 
 // ---------------- Update-Prüfung (GitHub-Releases) ----------------
 
-data class UpdateInfo(val version: String, val groesse: Long, val notizen: String, val seite: String)
+data class UpdateInfo(val version: String, val groesse: Long, val notizen: String, val seite: String, val apkUrl: String = "")
 
 object UpdateDienst {
     /** > 0, wenn a neuer ist als b. */
@@ -191,7 +191,11 @@ object UpdateDienst {
         if (vergleichen(version, BuildConfig.VERSION_NAME) <= 0) return null
         return UpdateInfo(
             version, (apk["size"] as? JsonPrimitive)?.longOrNull ?: 0L,
-            (j["body"].s() ?: "").take(800), "https://github.com/$repo/releases"
+            (j["body"].s() ?: "").lines()
+                .filterNot { it.startsWith("Co-Authored-By", true) || it.startsWith("Claude-Session") }
+                .joinToString("\n").trim().take(800),
+            "https://github.com/$repo/releases",
+            apk["browser_download_url"].s() ?: "",
         )
     }
 }

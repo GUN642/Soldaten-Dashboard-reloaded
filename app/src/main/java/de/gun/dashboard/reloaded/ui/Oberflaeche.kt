@@ -1,5 +1,12 @@
 package de.gun.dashboard.reloaded.ui
 
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
+import de.gun.dashboard.reloaded.netz.UpdateZustand
+import de.gun.dashboard.reloaded.netz.UpdateLader
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.consumeWindowInsets
 import android.Manifest
@@ -248,6 +255,7 @@ private fun Gesamt(aktivitaet: MainActivity, st: Steuerung) {
     }
 
     st.meldung?.let { (t, x) -> Meldung(t, x) { st.meldung = null } }
+    UpdateFortschritt()
     update?.let { u ->
         Wahl(
             "Update verfügbar",
@@ -255,8 +263,8 @@ private fun Gesamt(aktivitaet: MainActivity, st: Steuerung) {
                 (if (u.groesse > 0) " · " + String.format("%.1f MB", u.groesse / 1048576.0) else "") +
                 (if (u.notizen.isNotBlank()) "\n\n" + u.notizen else ""),
             listOf(
-                Triple("Zur Download-Seite", KnopfArt.PRIMAER) {
-                    ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u.seite)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                Triple("Jetzt aktualisieren", KnopfArt.PRIMAER) {
+                    UpdateLader.starten(ctx, u)
                     update = null
                 },
                 Triple("Diese Version überspringen", KnopfArt.NORMAL) {
@@ -277,6 +285,49 @@ private fun Gesamt(aktivitaet: MainActivity, st: Steuerung) {
                 Triple("Später erinnern", KnopfArt.NORMAL) { sicherungFrage = false },
             ),
         ) { sicherungFrage = false }
+    }
+}
+
+/** Fortschritt und Ergebnis des Update-Downloads als Dialog. */
+@Composable
+private fun UpdateFortschritt() {
+    val p = LocalPalette.current
+    val ctx = LocalContext.current
+    val z by UpdateLader.zustand.collectAsState()
+    when (val zu = z) {
+        is UpdateZustand.Leer -> {}
+        is UpdateZustand.Laedt -> AlertDialog(
+            onDismissRequest = {},
+            title = { Punkt("UPDATE ${zu.version}", 18.sp) },
+            text = {
+                Column {
+                    val anteil = if (zu.gesamt > 0) (zu.fertig.toFloat() / zu.gesamt).coerceIn(0f, 1f) else 0f
+                    Fliesstext("Wird heruntergeladen …", p.textDim)
+                    Abstand(10.dp)
+                    Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(p.randLeise)) {
+                        Box(Modifier.fillMaxWidth(anteil).fillMaxHeight().background(p.akzent))
+                    }
+                    Abstand(6.dp)
+                    Mono(String.format("%.1f / %.1f MB", zu.fertig / 1048576.0, zu.gesamt / 1048576.0), p.textFaint, 11.sp)
+                }
+            },
+            confirmButton = { TextButton(onClick = { UpdateLader.abbrechen() }) { Text("ABBRECHEN", fontFamily = Schrift.mono, color = p.textDim) } },
+            containerColor = p.panel, shape = RUND,
+        )
+        is UpdateZustand.Bereit -> Wahl(
+            "Update ${zu.version}",
+            "Die neue Version ist heruntergeladen. Android fragt jetzt nach der Installation – deine Daten bleiben erhalten.\n\n" +
+                "Beim ersten Mal muss „Unbekannte Apps installieren“ für Dashboard Reloaded erlaubt werden; danach hier erneut auf „Installieren“ tippen.",
+            listOf(Triple("Installieren", KnopfArt.PRIMAER) { UpdateLader.installieren(ctx, zu.datei) }),
+        ) { UpdateLader.schliessen() }
+        is UpdateZustand.Fehler -> Wahl(
+            "Update",
+            zu.text,
+            listOf(Triple("Zur Download-Seite", KnopfArt.NORMAL) {
+                ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/" + Speicher.aktuell.update.repo + "/releases")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                UpdateLader.schliessen()
+            }),
+        ) { UpdateLader.schliessen() }
     }
 }
 

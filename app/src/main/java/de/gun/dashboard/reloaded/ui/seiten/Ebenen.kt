@@ -266,6 +266,10 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.2.1" to listOf(
+        "Updates direkt in der App: „Jetzt aktualisieren“ lädt die neue Version herunter (mit Fortschritt) und startet die Installation – kein Umweg über GitHub mehr.",
+        "Sicherheitsprüfung: Installiert wird nur eine APK dieser App mit höherer Versionsnummer.",
+    ),
     "1.2.0" to listOf(
         "Neu: Amtliche Warnungen des Deutschen Wetterdienstes (DWD) für den Wetter-Ort – Karte auf HEUTE mit Warnstufe, Zeitraum, Beschreibung und Verhaltenshinweisen.",
         "Benachrichtigung bei neuen Warnungen: Gewitter, Sturm, Hagel und Starkregen ab Stufe 2, alle übrigen ab Stufe 3; Prüfung im Hintergrund alle 30 Minuten.",

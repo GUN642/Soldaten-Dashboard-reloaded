@@ -1,5 +1,6 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import de.gun.dashboard.reloaded.netz.UpdateLader
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -308,8 +309,8 @@ fun MenueEbene() {
                                     val u = UpdateDienst.pruefen(d.update.repo)
                                     if (u == null) "Diese Version (${BuildConfig.VERSION_NAME}) ist aktuell."
                                     else {
-                                        ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u.seite)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                                        "Version ${u.version} verfügbar – die Download-Seite wurde geöffnet."
+                                        UpdateLader.starten(ctx, u)
+                                        "Version ${u.version} wird heruntergeladen und anschließend installiert."
                                     }
                                 } catch (e: Exception) { "Die Update-Prüfung ist fehlgeschlagen: " + (e.message ?: "") }
                             }
