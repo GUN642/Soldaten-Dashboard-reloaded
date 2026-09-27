@@ -153,7 +153,9 @@ fun WochenAnsicht(b: TerminBestand, kopf: @Composable () -> Unit) {
             HorizontalPager(state = pager, modifier = Modifier.weight(1f), beyondViewportPageCount = 1, key = { it }) { seite ->
                 val ws = anker.plusWeeks((seite - mitte).toLong())
                 val we = ws.plusDays(6)
-                val tage by produceState<Map<LocalDate, List<Termin>>?>(null, b, ws) {
+                // sichtbare Woche sofort, Nachbarwochen im Hintergrund
+                val sofort = seite == pager.currentPage
+                val tage by produceState(if (sofort) termineNachTag(terminFenster(b, ws, we), ws, we) else null, b, ws) {
                     value = withContext(Dispatchers.Default) { termineNachTag(terminFenster(b, ws, we), ws, we) }
                 }
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 96.dp)) {
@@ -180,11 +182,11 @@ fun AgendaAnsicht(b: TerminBestand, kopf: @Composable () -> Unit) {
     val st = LocalSteuerung.current
     val start = remember { LocalDate.now() }
     var tage by remember { mutableStateOf(90L) }
-    val eintraege by produceState<List<Pair<LocalDate, List<Termin>>>?>(null, b, tage) {
+    fun berechnen(bis: LocalDate) = termineNachTag(terminFenster(b, start, bis), start, bis).filter { it.value.isNotEmpty() }.toList()
+    // erste 30 Tage sofort anzeigen, der Rest folgt im Hintergrund
+    val eintraege by produceState(remember(b) { berechnen(start.plusDays(30)) }, b, tage) {
         val bis = start.plusDays(tage)
-        value = withContext(Dispatchers.Default) {
-            termineNachTag(terminFenster(b, start, bis), start, bis).filter { it.value.isNotEmpty() }.toList()
-        }
+        value = withContext(Dispatchers.Default) { berechnen(bis) }
     }
     val liste = rememberLazyListState()
     // am Ende angekommen: weitere 90 Tage laden (höchstens zwei Jahre)
@@ -201,8 +203,7 @@ fun AgendaAnsicht(b: TerminBestand, kopf: @Composable () -> Unit) {
             }
             val e = eintraege
             LazyColumn(Modifier.weight(1f), state = liste, contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 96.dp)) {
-                if (e == null) item { Mono("Wird geladen …", p.textDim, 12.sp, Modifier.padding(16.dp)) }
-                else if (e.isEmpty()) item { Mono("Keine Termine in den nächsten $tage Tagen.", p.textDim, 12.sp, Modifier.padding(16.dp)) }
+                if (e.isEmpty()) item { Mono("Keine Termine in den nächsten $tage Tagen.", p.textDim, 12.sp, Modifier.padding(16.dp)) }
                 else {
                     var monat = -1
                     e.forEach { (tag, termine) ->
