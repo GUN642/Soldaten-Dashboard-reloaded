@@ -3,4 +3,16 @@
     <string name="app_name">Dashboard Reloaded</string>
     <string name="widget_name">Soldaten Dashboard – Agenda</string>
     <string name="widget_beschreibung">Termine und fällige Aufgaben</string>
+    <string name="kurz_termin">Neuer Termin</string>
+    <string name="kurz_termin_lang">Termin anlegen</string>
+    <string name="kurz_aufgabe">Neue Aufgabe</string>
+    <string name="kurz_aufgabe_lang">Aufgabe anlegen</string>
+    <string name="kurz_kalender">Kalender</string>
+    <string name="kurz_kalender_lang">Kalender öffnen</string>
+    <string name="kurz_suche">Suchen</string>
+    <string name="kurz_suche_lang">Alles durchsuchen</string>
+    <string name="widget_kennzahlen_name">Dashboard Kennzahlen</string>
+    <string name="widget_kennzahlen_beschreibung">Resturlaub, Mehrarbeit und Fristen</string>
+    <string name="widget_wetter_name">Dashboard Wetter</string>
+    <string name="widget_wetter_beschreibung">Wetter mit DWD-Warnung</string>
 </resources>

@@ -136,6 +136,20 @@ fun KalenderSeite() {
     // Ferien des angezeigten Jahres bei Bedarf nachladen
     androidx.compose.runtime.LaunchedEffect(monat.year, d.feiertagsLand.land, d.ferien.an) { ferienSicherstellen(monat.year) }
 
+    // Woche und Agenda als eigene Ansichten mit gemeinsamem Umschalter
+    val ansichtKopf: @Composable () -> Unit = {
+        Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            AnsichtWahl()
+            Spacer(Modifier.weight(1f))
+            Symbol("↻") { scope.launch { Aktualisierung.geraetLadenJetzt(ctx); st.kurz("Kalender neu eingelesen") } }
+            Symbol("⚙") { st.kalenderEinstellungen = true }
+        }
+    }
+    when (d.kalender.ansicht) {
+        "woche" -> { WochenAnsicht(b, ansichtKopf); return }
+        "agenda" -> { AgendaAnsicht(b, ansichtKopf); return }
+    }
+
     // Monate als Seiten: flüssiges Mitziehen mit dem Finger, Nachbarmonate werden vorab aufgebaut
     val anker = remember { st.kalenderMonat.withDayOfMonth(1) }
     val pager = rememberPagerState(initialPage = seiteZuMonat(anker, monat)) { SEITEN }
@@ -158,8 +172,11 @@ fun KalenderSeite() {
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // Raster füllt mindestens die sichtbare Höhe unter Kopf und Wochentagen
-        val rasterMin = if (constraints.hasBoundedHeight) (maxHeight - 84.dp).coerceAtLeast(0.dp) else 0.dp
+        val rasterMin = if (constraints.hasBoundedHeight) (maxHeight - (if (st.kalenderGross) 84 else 118).dp).coerceAtLeast(0.dp) else 0.dp
         Column(Modifier.fillMaxSize().then(if (st.kalenderGross) Modifier else Modifier.verticalScroll(rememberScrollState()))) {
+            if (!st.kalenderGross) Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                AnsichtWahl()
+            }
             // Kopf
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Symbol("‹", p.text) { wechseln(-1) }

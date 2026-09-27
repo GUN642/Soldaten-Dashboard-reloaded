@@ -1,5 +1,10 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import androidx.compose.runtime.LaunchedEffect
+import de.gun.dashboard.reloaded.ui.Hinweis
+import de.gun.dashboard.reloaded.logik.aufgabeUmschalten
+import de.gun.dashboard.reloaded.logik.wiederholungText
+import de.gun.dashboard.reloaded.logik.WIEDERHOLUNGEN
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -59,6 +64,17 @@ private val PRIO_RANG = mapOf("hoch" to 0, "mittel" to 1, "niedrig" to 2)
 fun aufgabenAendern(block: (List<Aufgabe>) -> List<Aufgabe>) =
     Speicher.aendern { it.copy(todos = it.todos.copy(eintraege = block(it.todos.eintraege))) }
 
+/** Abhaken bzw. wieder öffnen; bei wiederkehrenden Aufgaben entsteht die nächste und wird kurz gemeldet. */
+fun aufgabeErledigen(st: de.gun.dashboard.reloaded.ui.Steuerung, t: Aufgabe) {
+    val heute = LocalDate.now()
+    val vorher = Speicher.aktuell.todos.eintraege
+    aufgabenAendern { aufgabeUmschalten(it, t.id, heute, ::neueId) }
+    if (!t.erledigt) {
+        val neu = Speicher.aktuell.todos.eintraege.firstOrNull { n -> vorher.none { it.id == n.id } }
+        if (neu != null) st.kurz("Erledigt · nächste Fälligkeit ${neu.faellig}") else st.kurz("Erledigt: " + t.text)
+    }
+}
+
 @Composable
 fun AufgabenSeite() {
     val p = LocalPalette.current
@@ -77,13 +93,14 @@ fun AufgabenSeite() {
     var faellig by remember { mutableStateOf("") }
     var uhrzeit by remember { mutableStateOf("") }
     var prio by remember { mutableStateOf("mittel") }
+    var wiederholung by remember { mutableStateOf("") }
     var notiz by remember { mutableStateOf("") }
     var anhaenge by remember { mutableStateOf(listOf<Anhang>()) }
     var neuAnh by remember { mutableStateOf(listOf<Anhang>()) }
     var alleErledigtWeg by remember { mutableStateOf(false) }
 
     fun leeren() {
-        bearbeitet = null; text = ""; faellig = ""; uhrzeit = ""; prio = "mittel"; notiz = ""; anhaenge = emptyList(); neuAnh = emptyList()
+        bearbeitet = null; text = ""; faellig = ""; uhrzeit = ""; prio = "mittel"; wiederholung = ""; notiz = ""; anhaenge = emptyList(); neuAnh = emptyList()
     }
 
     fun speichern() {
@@ -91,15 +108,21 @@ fun AufgabenSeite() {
         if (faellig.isNotBlank() && parseDE(faellig) == null) { st.melden("Aufgabe", "Bitte ein gültiges Fälligkeitsdatum (TT.MM.JJJJ) eingeben, oder das Feld leer lassen."); return }
         val uz = if (uhrzeit.isBlank()) "" else zeitNormieren(uhrzeit) ?: run { st.melden("Aufgabe", "Bitte eine gültige Uhrzeit im Format HH:MM eingeben."); return }
         if (uz.isNotEmpty() && faellig.isBlank()) { st.melden("Aufgabe", "Für eine Uhrzeit wird auch ein Fälligkeitsdatum benötigt."); return }
+        // Wiederkehrende Aufgaben brauchen einen Startpunkt – ohne Datum ab heute
+        val fae = if (wiederholung.isNotBlank() && faellig.isBlank()) heuteDE() else faellig.trim()
         val id = bearbeitet
         if (id != null) {
             val alt = alle.firstOrNull { it.id == id }
-            aufgabenAendern { l -> l.map { if (it.id == id) it.copy(text = text.trim(), faellig = faellig.trim(), uhrzeit = uz, prio = prio, notiz = notiz.trim(), anhaenge = anhaenge) else it } }
+            aufgabenAendern { l -> l.map { if (it.id == id) it.copy(text = text.trim(), faellig = fae, uhrzeit = uz, prio = prio, notiz = notiz.trim(), anhaenge = anhaenge, wiederholung = wiederholung) else it } }
             alt?.let { Anhaenge.loeschen(ctx, it.anhaenge.filter { a -> a !in anhaenge }) }
         } else {
-            aufgabenAendern { it + Aufgabe(neueId(), text.trim(), faellig.trim(), uz, prio, notiz.trim(), anhaenge, false, heuteDE()) }
+            aufgabenAendern { it + Aufgabe(neueId(), text.trim(), fae, uz, prio, notiz.trim(), anhaenge, false, heuteDE(), wiederholung = wiederholung) }
         }
         leeren(); formOffen = false
+    }
+
+    LaunchedEffect(st.aufgabeNeu) {
+        if (st.aufgabeNeu) { leeren(); formOffen = true; st.aufgabeNeu = false }
     }
 
     SeitenListe {
@@ -120,7 +143,12 @@ fun AufgabenSeite() {
                         Knopf("Morgen", klein = true) { faellig = LocalDate.now().plusDays(1).alsDE() }
                         Knopf("+1 Woche", klein = true) { faellig = LocalDate.now().plusDays(7).alsDE() }
                     }
-                    Auswahl("Priorität", listOf("niedrig" to "Niedrig", "mittel" to "Mittel", "hoch" to "Hoch"), prio) { prio = it }
+                    Row {
+                        Auswahl("Priorität", listOf("niedrig" to "Niedrig", "mittel" to "Mittel", "hoch" to "Hoch"), prio, Modifier.weight(1f)) { prio = it }
+                        Spacer(Modifier.width(8.dp))
+                        Auswahl("Wiederholen", WIEDERHOLUNGEN, wiederholung, Modifier.weight(1f)) { wiederholung = it }
+                    }
+                    if (wiederholung.isNotBlank()) Hinweis("Beim Abhaken wird automatisch die nächste Aufgabe angelegt" + if (faellig.isBlank()) " – Start ab heute." else ".")
                     Feld(notiz, { notiz = it }, "Notizen (optional)", platzhalter = "Weitere Angaben, Ansprechpartner …", zeilen = 3)
                     Etikett("Dateianhang (optional)")
                     AnhangBereich(anhaenge, { neu -> neuAnh = neuAnh + neu.filter { it !in anhaenge }; anhaenge = neu })
@@ -133,7 +161,7 @@ fun AufgabenSeite() {
                 if (offen.isEmpty()) Leer("Keine offenen Aufgaben.")
                 offen.forEach { t ->
                     AufgabenZeile(t, onBearbeiten = {
-                        bearbeitet = t.id; text = t.text; faellig = t.faellig; uhrzeit = t.uhrzeit; prio = t.prio.ifBlank { "mittel" }
+                        bearbeitet = t.id; text = t.text; faellig = t.faellig; uhrzeit = t.uhrzeit; prio = t.prio.ifBlank { "mittel" }; wiederholung = t.wiederholung
                         notiz = t.notiz; anhaenge = t.anhaenge; neuAnh = emptyList(); formOffen = true
                     })
                 }
@@ -184,7 +212,7 @@ private fun AufgabenZeile(t: Aufgabe, onBearbeiten: (() -> Unit)?) {
                 Modifier.size(24.dp).clip(CircleShape).background(if (t.erledigt) p.gruen else Color.Transparent)
                     .border(1.5.dp, if (t.erledigt) p.gruen else p.rand, CircleShape)
                     .clickable {
-                        aufgabenAendern { l -> l.map { if (it.id == t.id) it.copy(erledigt = !it.erledigt, erledigtAm = if (!it.erledigt) heuteDE() else "") else it } }
+                        aufgabeErledigen(st, t)
                     },
                 contentAlignment = Alignment.Center,
             ) { if (t.erledigt) Mono("✓", p.bg, 13.sp, fett = true) }
@@ -201,6 +229,7 @@ private fun AufgabenZeile(t: Aufgabe, onBearbeiten: (() -> Unit)?) {
                     if (t.faellig.isNotBlank()) (if (ueber) "Überfällig seit " else "Fällig: ") + t.faellig + (if (t.uhrzeit.isNotBlank()) ", ${t.uhrzeit} Uhr" else "") else null,
                     if (t.erledigt && t.erledigtAm.isNotBlank()) "Erledigt: ${t.erledigtAm}" else null,
                     if (!t.erledigt && t.prio.isNotBlank()) t.prio.replaceFirstChar { it.uppercase() } else null,
+                    if (t.wiederholung.isNotBlank() && !t.erledigt) "↻ " + wiederholungText(t.wiederholung) else null,
                     if (t.anhaenge.isNotEmpty()) "${t.anhaenge.size} " + if (t.anhaenge.size == 1) "Anhang" else "Anhänge" else null,
                 )
                 if (meta.isNotEmpty()) Fliesstext(meta.joinToString(" · "), if (ueber) p.rot else p.textDim, 12.sp)

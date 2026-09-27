@@ -138,6 +138,18 @@ class Bildschirmfotos {
             androidx.compose.foundation.layout.Column(Modifier.padding(14.dp)) { UnwetterKarte() }
         }
     }
+    @Test fun kalenderWoche() {
+        foto("kalenderwoche", "nothing", Reiter.KALENDER) {
+            remember { de.gun.dashboard.reloaded.daten.Speicher.aendern { it.copy(kalender = it.kalender.copy(ansicht = "woche")) }; true }
+            KalenderSeite()
+        }
+    }
+    @Test fun kalenderAgenda() {
+        foto("kalenderagenda", "nothing", Reiter.KALENDER) {
+            remember { de.gun.dashboard.reloaded.daten.Speicher.aendern { it.copy(kalender = it.kalender.copy(ansicht = "agenda")) }; true }
+            KalenderSeite()
+        }
+    }
     @Test fun todo() { foto("todo", "nothing", Reiter.TODO) { AufgabenSeite() } }
     @Test fun notizen() { foto("notizen", "nothing", Reiter.NOTIZEN) { NotizenSeite() } }
     @Test fun urlaub() { foto("urlaub", "nothing", Reiter.URLAUB) { UrlaubSeite() } }

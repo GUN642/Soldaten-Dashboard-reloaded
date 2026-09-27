@@ -115,6 +115,8 @@ data class Aufgabe(
     val erledigt: FBool = false,
     val erstellt: FText = "",
     val erledigtAm: FText = "",
+    /** Wiederholungsregel (leer = einmalig), siehe logik.WIEDERHOLUNGEN. */
+    val wiederholung: FText = "",
 )
 
 @Serializable
@@ -210,6 +212,8 @@ data class Kalender(
     val schriftgroesse: FGanzN = 100,
     val todosImKalender: Boolean = true,
     val erledigteImKalender: Boolean = false,
+    /** Ansicht im Kalender: monat, woche oder agenda. */
+    val ansicht: String = "monat",
 )
 
 // ---------------- Heute / Wetter ----------------

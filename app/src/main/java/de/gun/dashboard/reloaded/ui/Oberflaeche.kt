@@ -141,10 +141,15 @@ private fun Gesamt(aktivitaet: MainActivity, st: Steuerung) {
             "todo" -> st.reiter = Reiter.TODO
             "kalender" -> { st.reiter = Reiter.KALENDER; st.kalenderTag = LocalDate.now() }
             "lehrgaenge" -> st.reiter = Reiter.LEHRGAENGE
+            "urlaub" -> st.reiter = Reiter.URLAUB
             "dokumente" -> st.reiter = Reiter.DOKUMENTE
             "akte" -> st.reiter = Reiter.AKTE
             "menue" -> st.menueOffen = true
             "heute" -> st.reiter = Reiter.HEUTE
+            // App-Kurzbefehle (langes Drücken auf das App-Symbol)
+            "neuerTermin" -> st.maske = MaskeStart(datum = LocalDate.now())
+            "neueAufgabe" -> { st.reiter = Reiter.TODO; st.aufgabeNeu = true }
+            "suche" -> st.sucheOffen = true
         }
         if (ziel != null) aktivitaet.ziel = null
     }

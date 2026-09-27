@@ -198,14 +198,7 @@ private fun HeuteAufgaben() {
                 if (ueber) p.rot else Color(if (t.prio == "hoch") FARBE_TODO_HOCH else FARBE_TODO),
                 onClick = { st.reiter = Reiter.TODO },
                 aktionen = {
-                    Symbol("✓", p.gruen) {
-                        Speicher.aendern { a ->
-                            a.copy(todos = a.todos.copy(eintraege = a.todos.eintraege.map {
-                                if (it.id == t.id) it.copy(erledigt = true, erledigtAm = heuteDE()) else it
-                            }))
-                        }
-                        st.kurz("Erledigt: " + t.text)
-                    }
+                    Symbol("✓", p.gruen) { aufgabeErledigen(st, t) }
                 }
             ) {
                 Fliesstext(t.text, fett = true, zeilen = 2)

@@ -15,6 +15,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.glance.appwidget.updateAll
 import de.gun.dashboard.reloaded.MainActivity
 import de.gun.dashboard.reloaded.R
 import de.gun.dashboard.reloaded.daten.Speicher
@@ -99,6 +100,7 @@ class UnwetterArbeit(ctx: Context, params: WorkerParameters) : CoroutineWorker(c
         if (!d.dwdWarnungen || !d.dwdPush) return Result.success()
         return try {
             Unwetter.neueMelden(applicationContext, DwdWarnDienst.laden(d.ort, neu = true))
+            try { de.gun.dashboard.reloaded.widget.WetterWidget().updateAll(applicationContext) } catch (e: Exception) { }
             Result.success()
         } catch (e: Exception) {
             Result.retry()

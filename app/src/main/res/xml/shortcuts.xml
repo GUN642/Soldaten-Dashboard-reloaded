@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="termin"
+        android:enabled="true"
+        android:icon="@drawable/ic_kurz_termin"
+        android:shortcutShortLabel="@string/kurz_termin"
+        android:shortcutLongLabel="@string/kurz_termin_lang">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="de.gun.dashboard.reloaded"
+            android:targetClass="de.gun.dashboard.reloaded.MainActivity">
+            <extra android:name="ziel" android:value="neuerTermin" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="aufgabe"
+        android:enabled="true"
+        android:icon="@drawable/ic_kurz_aufgabe"
+        android:shortcutShortLabel="@string/kurz_aufgabe"
+        android:shortcutLongLabel="@string/kurz_aufgabe_lang">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="de.gun.dashboard.reloaded"
+            android:targetClass="de.gun.dashboard.reloaded.MainActivity">
+            <extra android:name="ziel" android:value="neueAufgabe" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="kalender"
+        android:enabled="true"
+        android:icon="@drawable/ic_kurz_kalender"
+        android:shortcutShortLabel="@string/kurz_kalender"
+        android:shortcutLongLabel="@string/kurz_kalender_lang">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="de.gun.dashboard.reloaded"
+            android:targetClass="de.gun.dashboard.reloaded.MainActivity">
+            <extra android:name="ziel" android:value="kalender" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="suche"
+        android:enabled="true"
+        android:icon="@drawable/ic_kurz_suche"
+        android:shortcutShortLabel="@string/kurz_suche"
+        android:shortcutLongLabel="@string/kurz_suche_lang">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="de.gun.dashboard.reloaded"
+            android:targetClass="de.gun.dashboard.reloaded.MainActivity">
+            <extra android:name="ziel" android:value="suche" />
+        </intent>
+    </shortcut>
+</shortcuts>

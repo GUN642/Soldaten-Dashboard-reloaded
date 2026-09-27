@@ -26,6 +26,8 @@ class Steuerung(private val scope: CoroutineScope, val snackbar: SnackbarHostSta
     var reiter by mutableStateOf(Reiter.HEUTE)
     var menueOffen by mutableStateOf(false)
     var sucheOffen by mutableStateOf(false)
+    /** Kurzbefehl „Neue Aufgabe“: To-do-Formular direkt öffnen. */
+    var aufgabeNeu by mutableStateOf(false)
     var einrichtungOffen by mutableStateOf(false)
     var changelogOffen by mutableStateOf(false)
     var terminDetail by mutableStateOf<Termin?>(null)

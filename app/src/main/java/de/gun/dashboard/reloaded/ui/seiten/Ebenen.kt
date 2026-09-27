@@ -266,6 +266,12 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.3.0" to listOf(
+        "Wiederkehrende Aufgaben: täglich, werktags, wöchentlich, alle 2 Wochen, monatlich, vierteljährlich oder jährlich – beim Abhaken entsteht automatisch die nächste.",
+        "Kalender: neue Wochen- und Agenda-Ansicht, Umschalter Monat / Woche / Agenda oben im Kalender.",
+        "App-Kurzbefehle: lange auf das App-Symbol drücken → Neuer Termin, Neue Aufgabe, Kalender, Suchen.",
+        "Zwei neue Widgets: „Dashboard Kennzahlen“ (Resturlaub, Mehrarbeit, Fristen) und „Dashboard Wetter“ (mit DWD-Warnung).",
+    ),
     "1.2.1" to listOf(
         "Updates direkt in der App: „Jetzt aktualisieren“ lädt die neue Version herunter (mit Fortschritt) und startet die Installation – kein Umweg über GitHub mehr.",
         "Sicherheitsprüfung: Installiert wird nur eine APK dieser App mit höherer Versionsnummer.",

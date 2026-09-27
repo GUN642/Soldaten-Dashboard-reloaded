@@ -50,7 +50,7 @@ object Aktualisierung {
     }
 
     private suspend fun folgeArbeiten(app: Context) {
-        try { AgendaWidget.aktualisieren(app) } catch (e: Exception) { }
+        try { de.gun.dashboard.reloaded.widget.alleWidgetsAktualisieren(app) } catch (e: Exception) { }
         try { Erinnerungen.planen(app) } catch (e: Exception) { }
     }
 

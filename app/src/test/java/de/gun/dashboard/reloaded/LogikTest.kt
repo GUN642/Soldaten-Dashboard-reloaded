@@ -84,6 +84,25 @@ class LogikTest {
         val t = terminFenster(b, LocalDate.of(2026,9,20), LocalDate.of(2026,9,30)).filter { it.quelleId == "q" }
         assertEquals(1, t.size); assertEquals(LocalDate.of(2026,9,24), t[0].ersterTag); assertEquals(LocalDate.of(2026,9,24), t[0].letzterTag)
     }
+    @Test fun aufgabenWiederholung() {
+        val heute = LocalDate.of(2026, 9, 27)
+        // monatlich vom 31.01. -> 28.02.; spät erledigt -> nächste ab heute
+        assertEquals(LocalDate.of(2026, 2, 28), naechsteFaelligkeit(LocalDate.of(2026, 1, 31), "monatlich", LocalDate.of(2026, 1, 1)))
+        assertEquals(LocalDate.of(2026, 10, 15), naechsteFaelligkeit(LocalDate.of(2026, 6, 15), "monatlich", heute))
+        // werktags: Fr 25.09. -> Mo 28.09.
+        assertEquals(LocalDate.of(2026, 9, 28), naechsteFaelligkeit(LocalDate.of(2026, 9, 25), "werktags", heute))
+        assertNull(naechsteFaelligkeit(heute, "", heute))
+        val a = Aufgabe("a", "Reisekosten", "15.09.2026", "", "mittel", wiederholung = "monatlich")
+        val l = aufgabeUmschalten(listOf(a), "a", heute) { "b" }
+        assertEquals(2, l.size)
+        assertTrue(l.first { it.id == "a" }.erledigt)
+        assertEquals("15.10.2026", l.first { it.id == "b" }.faellig)
+        assertFalse(l.first { it.id == "b" }.erledigt)
+        // einmalige Aufgabe: nur abhaken, wieder öffnen
+        val e = aufgabeUmschalten(listOf(a.copy(wiederholung = "")), "a", heute)
+        assertEquals(1, e.size); assertTrue(e[0].erledigt)
+        assertFalse(aufgabeUmschalten(e, "a", heute)[0].erledigt)
+    }
     @Test fun ics() {
         val t = icsLesen("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:x\r\nSUMMARY:Test\\, eins\r\nDTSTART;VALUE=DATE:20261003\r\nDTEND;VALUE=DATE:20261004\r\nEND:VEVENT\r\nEND:VCALENDAR")
         assertEquals("Test, eins", t[0].titel); assertTrue(t[0].allDay)
