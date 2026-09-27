@@ -19,7 +19,7 @@ enum class Reiter(val titel: String) {
 }
 
 /** Aufruf der Termin-Eingabemaske. */
-data class MaskeStart(val datum: LocalDate? = null, val termin: Termin? = null)
+data class MaskeStart(val datum: LocalDate? = null, val termin: Termin? = null, val uhrzeit: java.time.LocalTime? = null)
 
 /** Globaler Zustand der Oberfläche: Reiter, Ebenen, Meldungen. */
 class Steuerung(private val scope: CoroutineScope, val snackbar: SnackbarHostState) {

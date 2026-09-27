@@ -123,58 +123,6 @@ private fun TerminEintrag(t: Termin) {
     TerminZeile(t) { if (t.istTodo) st.reiter = Reiter.TODO else st.terminDetail = t }
 }
 
-/** Woche: sieben Tage untereinander, seitlich blättern. */
-@Composable
-fun WochenAnsicht(b: TerminBestand, kopf: @Composable () -> Unit) {
-    val p = LocalPalette.current
-    val st = LocalSteuerung.current
-    val anker = remember { wochenStart(LocalDate.now()) }
-    val mitte = 1200
-    val pager = rememberPagerState(initialPage = mitte + ChronoUnit.WEEKS.between(anker, wochenStart(st.kalenderTag ?: LocalDate.now())).toInt()) { 2400 }
-    var woche by remember { mutableStateOf(anker.plusWeeks((pager.currentPage - mitte).toLong())) }
-    LaunchedEffect(pager) { snapshotFlow { pager.currentPage }.collect { woche = anker.plusWeeks((it - mitte).toLong()) } }
-    val ende = woche.plusDays(6)
-
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
-            kopf()
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Symbol("‹", p.text) { woche = woche.minusWeeks(1) }
-                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Punkt("KW " + kalenderwoche(woche), 18.sp)
-                    Mono("%02d.%02d. – %02d.%02d.%d".format(woche.dayOfMonth, woche.monthValue, ende.dayOfMonth, ende.monthValue, ende.year), p.textDim, 11.sp)
-                }
-                Symbol("›", p.text) { woche = woche.plusWeeks(1) }
-            }
-            LaunchedEffect(woche) {
-                val ziel = mitte + ChronoUnit.WEEKS.between(anker, woche).toInt()
-                if (ziel != pager.currentPage) pager.animateScrollToPage(ziel)
-            }
-            HorizontalPager(state = pager, modifier = Modifier.weight(1f), beyondViewportPageCount = 1, key = { it }) { seite ->
-                val ws = anker.plusWeeks((seite - mitte).toLong())
-                val we = ws.plusDays(6)
-                // sichtbare Woche sofort, Nachbarwochen im Hintergrund
-                val sofort = seite == pager.currentPage
-                val tage by produceState(if (sofort) termineNachTag(terminFenster(b, ws, we), ws, we) else null, b, ws) {
-                    value = withContext(Dispatchers.Default) { termineNachTag(terminFenster(b, ws, we), ws, we) }
-                }
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 96.dp)) {
-                    tage?.forEach { (tag, liste) ->
-                        item(key = tag.toString()) {
-                            Column {
-                                TagKopf(tag, b)
-                                if (liste.isEmpty()) Mono("—", p.textFaint, 12.sp, Modifier.padding(start = 38.dp, bottom = 4.dp))
-                                liste.forEach { TerminEintrag(it) }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        NeuKnopf(Modifier.align(Alignment.BottomEnd)) { st.maske = MaskeStart(datum = st.kalenderTag ?: LocalDate.now()) }
-    }
-}
-
 /** Agenda: nur Tage mit Terminen, ab heute fortlaufend (lädt beim Scrollen nach). */
 @Composable
 fun AgendaAnsicht(b: TerminBestand, kopf: @Composable () -> Unit) {

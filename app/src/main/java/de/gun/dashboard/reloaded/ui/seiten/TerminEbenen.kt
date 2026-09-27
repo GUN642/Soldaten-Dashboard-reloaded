@@ -234,8 +234,8 @@ fun TerminMaskeEbene(start: MaskeStart) {
     var ganztags by remember { mutableStateOf(t?.ganztags ?: false) }
     var von by remember { mutableStateOf((t?.ersterTag ?: start.datum ?: LocalDate.now()).alsDE()) }
     var bis by remember { mutableStateOf(t?.let { if (it.letzterTag != it.ersterTag) it.letzterTag.alsDE() else "" } ?: "") }
-    var zeitVon by remember { mutableStateOf(t?.takeIf { !it.ganztags }?.start?.hhmm() ?: "08:00") }
-    var zeitBis by remember { mutableStateOf(t?.takeIf { !it.ganztags }?.ende?.hhmm() ?: "16:00") }
+    var zeitVon by remember { mutableStateOf(t?.takeIf { !it.ganztags }?.start?.hhmm() ?: start.uhrzeit?.hhmm() ?: "08:00") }
+    var zeitBis by remember { mutableStateOf(t?.takeIf { !it.ganztags }?.ende?.hhmm() ?: start.uhrzeit?.let { (if (it.hour >= 23) java.time.LocalTime.of(23, 59) else it.plusHours(1)).hhmm() } ?: "16:00") }
     var ort by remember { mutableStateOf(t?.ort ?: "") }
     var notiz by remember { mutableStateOf(t?.notiz?.ifBlank { eigener?.notiz ?: "" } ?: "") }
     var anhaenge by remember { mutableStateOf(eigener?.anhaenge ?: emptyList()) }

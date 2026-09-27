@@ -266,6 +266,10 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.3.1" to listOf(
+        "Wochenansicht neu als Zeitraster: sieben Spalten, ganztägige Termine oben, Terminblöcke nach Uhrzeit, rote Jetzt-Linie.",
+        "Überlappende Termine stehen nebeneinander; lange drücken auf eine freie Stelle legt einen Termin zu dieser Uhrzeit an.",
+    ),
     "1.3.0" to listOf(
         "Wiederkehrende Aufgaben: täglich, werktags, wöchentlich, alle 2 Wochen, monatlich, vierteljährlich oder jährlich – beim Abhaken entsteht automatisch die nächste.",
         "Kalender: neue Wochen- und Agenda-Ansicht, Umschalter Monat / Woche / Agenda oben im Kalender.",
