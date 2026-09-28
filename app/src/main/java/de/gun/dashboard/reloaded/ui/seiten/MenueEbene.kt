@@ -1,5 +1,7 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import de.gun.dashboard.reloaded.logik.WOCHENTAGE
+import de.gun.dashboard.reloaded.erinnerung.Tagesueberblick
 import de.gun.dashboard.reloaded.netz.UpdateLader
 import android.content.Intent
 import android.net.Uri
@@ -242,6 +244,8 @@ fun MenueEbene() {
                         })
                     }
                     Hinweis("Für selbst angelegte Termine, ablaufende Lehrgänge, Dokumente und Akte-Fristen sowie fällige Aufgaben.")
+                    Abstand()
+                    TagesueberblickEinstellungen()
                 }
             }
             // ------------------------------------------------ Bundesland
@@ -346,4 +350,52 @@ fun MenueEbene() {
             onNein = { importFrage = null },
         )
     }
+}
+
+
+/** Morgendlicher Tagesüberblick: Zeitpunkt, Wochentage, Inhalt. */
+@Composable
+private fun TagesueberblickEinstellungen() {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val e = aktuelleDaten().tagesueberblick
+    var status by remember { mutableStateOf("") }
+    fun setzen(f: (de.gun.dashboard.reloaded.daten.Tagesueberblick) -> de.gun.dashboard.reloaded.daten.Tagesueberblick) {
+        Speicher.aendern { it.copy(tagesueberblick = f(it.tagesueberblick)) }
+        val z = Tagesueberblick.planen(ctx)
+        status = if (z == null) "Tagesüberblick aus." else "Nächster Überblick: " + WOCHENTAGE[z.dayOfWeek.value - 1] + " " +
+            "%02d.%02d. um %02d:%02d".format(z.dayOfMonth, z.monthValue, z.hour, z.minute)
+    }
+    Etikett("Tagesüberblick am Morgen")
+    Knopfreihe {
+        Pille("Tagesüberblick", e.an) { setzen { it.copy(an = !it.an) } }
+        Knopf("Jetzt anzeigen", klein = true) { scope.launch { Tagesueberblick.zeigen(ctx, test = true) } }
+    }
+    if (e.an) {
+        Segmente(listOf("wecker" to "Nach dem Wecker", "fest" to "Feste Uhrzeit"), e.modus) { m -> setzen { it.copy(modus = m) } }
+        var uhr by remember { mutableStateOf(e.uhrzeit) }
+        Feld(uhr, { uhr = it }, if (e.modus == "wecker") "Ersatzzeit ohne Wecker" else "Uhrzeit", beiVerlassen = {
+            zeitNormieren(uhr)?.let { n -> uhr = n; setzen { it.copy(uhrzeit = n) } }
+        })
+        Knopfreihe {
+            WOCHENTAGE.forEachIndexed { i, name ->
+                val tag = i + 1
+                Pille(name, tag in e.tage) { setzen { it.copy(tage = if (tag in it.tage) it.tage - tag else (it.tage + tag).sorted()) } }
+            }
+        }
+        Knopfreihe {
+            Pille("Wetter", e.wetter) { setzen { it.copy(wetter = !it.wetter) } }
+            Pille("Termine", e.termine) { setzen { it.copy(termine = !it.termine) } }
+            Pille("Aufgaben", e.aufgaben) { setzen { it.copy(aufgaben = !it.aufgaben) } }
+            Pille("Fristen", e.fristen) { setzen { it.copy(fristen = !it.fristen) } }
+            Pille("Ausblick morgen", e.morgen) { setzen { it.copy(morgen = !it.morgen) } }
+        }
+        val wecker = remember { Tagesueberblick.weckzeit(ctx) }
+        Hinweis(
+            (if (e.modus == "wecker") "Erscheint eine Minute nach deinem Handy-Wecker (zwischen 4 und 12 Uhr), sonst zur Ersatzzeit. " +
+                (wecker?.let { "Nächster Wecker: " + WOCHENTAGE[it.dayOfWeek.value - 1] + " %02d:%02d.".format(it.hour, it.minute) } ?: "Kein Wecker gestellt.")
+            else "Erscheint täglich zur eingestellten Uhrzeit.") + " Einmal pro Tag, bleibt bis zum Entsperren auf dem Sperrbildschirm."
+        )
+    }
+    if (status.isNotBlank()) Hinweis(status)
 }

@@ -23,6 +23,8 @@ class App : Application() {
         Erinnerungen.kanalAnlegen(this)
         de.gun.dashboard.reloaded.erinnerung.Unwetter.kanalAnlegen(this)
         de.gun.dashboard.reloaded.erinnerung.Unwetter.planen(this)
+        de.gun.dashboard.reloaded.erinnerung.Tagesueberblick.kanalAnlegen(this)
+        try { de.gun.dashboard.reloaded.erinnerung.Tagesueberblick.planen(this) } catch (e: Exception) { }
         Speicher.beiAenderung = { Aktualisierung.nachAenderung(this) }
         // Automatischer Urlaubszugang zum Jahreswechsel
         if (jahreswechsel(Speicher.aktuell) != Speicher.aktuell) Speicher.aendern { jahreswechsel(it) }

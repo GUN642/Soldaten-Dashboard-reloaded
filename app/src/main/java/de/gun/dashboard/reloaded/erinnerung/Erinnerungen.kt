@@ -183,5 +183,6 @@ class NeustartEmpfaenger : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Speicher.init(context)
         try { Erinnerungen.planen(context) } catch (e: Exception) { }
+        try { Tagesueberblick.planen(context) } catch (e: Exception) { }
     }
 }

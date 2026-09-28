@@ -41,6 +41,14 @@
             android:exported="false" />
 
         <receiver
+            android:name=".erinnerung.TagesueberblickEmpfaenger"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.app.action.NEXT_ALARM_CLOCK_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".erinnerung.NeustartEmpfaenger"
             android:exported="true">
             <intent-filter>

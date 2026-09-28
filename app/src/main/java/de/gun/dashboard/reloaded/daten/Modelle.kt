@@ -351,6 +351,23 @@ data class Benachrichtigungen(
     val an: Boolean = true,
 )
 
+/** Morgendlicher Tagesüberblick als Benachrichtigung. */
+@Serializable
+data class Tagesueberblick(
+    val an: Boolean = true,
+    /** "wecker" = kurz nach dem Handy-Wecker, "fest" = immer zur festen Uhrzeit. */
+    val modus: String = "wecker",
+    /** Feste Uhrzeit bzw. Ersatz, wenn kein Wecker gestellt ist. */
+    val uhrzeit: String = "07:00",
+    /** Wochentage 1 = Montag … 7 = Sonntag. */
+    val tage: List<Int> = listOf(1, 2, 3, 4, 5, 6, 7),
+    val wetter: Boolean = true,
+    val termine: Boolean = true,
+    val aufgaben: Boolean = true,
+    val fristen: Boolean = true,
+    val morgen: Boolean = true,
+)
+
 @Serializable
 data class FerienAbschnitt(val name: String = "Ferien", val von: String = "", val bis: String = "")
 
@@ -411,6 +428,7 @@ data class AppDaten(
     val feiertagsLand: FeiertagsLand = FeiertagsLand(),
     val nativ: NativEinstellungen = NativEinstellungen(),
     val ben: Benachrichtigungen = Benachrichtigungen(),
+    val tagesueberblick: Tagesueberblick = Tagesueberblick(),
     val ferien: Ferien = Ferien(),
     val sicherung: SicherungsStand = SicherungsStand(),
     val update: UpdateEinstellungen = UpdateEinstellungen(),

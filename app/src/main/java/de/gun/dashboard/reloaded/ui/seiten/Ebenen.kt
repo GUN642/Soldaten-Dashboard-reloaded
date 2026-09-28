@@ -266,6 +266,10 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.4.0" to listOf(
+        "Neu: Tagesüberblick am Morgen – eine Benachrichtigung mit Wetter (inkl. morgens/mittags/abends und DWD-Warnung), Terminen, fälligen Aufgaben, Fristen und dem ersten Termin von morgen.",
+        "Erscheint eine Minute nach dem Handy-Wecker (4–12 Uhr) oder zur festen Uhrzeit, einmal pro Tag, wählbare Wochentage. Einstellungen unter Menü › Benachrichtigungen.",
+    ),
     "1.3.1" to listOf(
         "Wochenansicht neu als Zeitraster: sieben Spalten, ganztägige Termine oben, Terminblöcke nach Uhrzeit, rote Jetzt-Linie.",
         "Überlappende Termine stehen nebeneinander; lange drücken auf eine freie Stelle legt einen Termin zu dieser Uhrzeit an.",

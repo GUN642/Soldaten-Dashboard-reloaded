@@ -103,6 +103,23 @@ class LogikTest {
         assertEquals(1, e.size); assertTrue(e[0].erledigt)
         assertFalse(aufgabeUmschalten(e, "a", heute)[0].erledigt)
     }
+    @Test fun tagesueberblick() {
+        val e = Tagesueberblick()
+        val jetzt = LocalDateTime.of(2026, 9, 28, 22, 0) // Montagabend
+        // Wecker Di 05:45 -> 05:46
+        assertEquals(LocalDateTime.of(2026, 9, 29, 5, 46), naechsterUeberblick(jetzt, e, LocalDateTime.of(2026, 9, 29, 5, 45), null))
+        // kein Wecker -> feste Zeit 07:00 am Dienstag
+        assertEquals(LocalDateTime.of(2026, 9, 29, 7, 0), naechsterUeberblick(jetzt, e, null, null))
+        // Nachtdienst-Wecker 02:30 zählt nicht -> 07:00
+        assertEquals(LocalDateTime.of(2026, 9, 29, 7, 0), naechsterUeberblick(jetzt, e, LocalDateTime.of(2026, 9, 29, 2, 30), null))
+        // heute schon gezeigt -> morgen
+        val frueh = LocalDateTime.of(2026, 9, 28, 6, 0)
+        assertEquals(LocalDateTime.of(2026, 9, 29, 7, 0), naechsterUeberblick(frueh, e, null, LocalDate.of(2026, 9, 28)))
+        // nur Mo-Fr: Freitagabend -> Montag
+        val werktags = e.copy(tage = listOf(1, 2, 3, 4, 5))
+        assertEquals(LocalDateTime.of(2026, 10, 5, 7, 0), naechsterUeberblick(LocalDateTime.of(2026, 10, 2, 20, 0), werktags, null, null))
+        assertNull(naechsterUeberblick(jetzt, e.copy(an = false), null, null))
+    }
     @Test fun ics() {
         val t = icsLesen("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:x\r\nSUMMARY:Test\\, eins\r\nDTSTART;VALUE=DATE:20261003\r\nDTEND;VALUE=DATE:20261004\r\nEND:VEVENT\r\nEND:VCALENDAR")
         assertEquals("Test, eins", t[0].titel); assertTrue(t[0].allDay)
