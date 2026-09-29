@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.4.1" to listOf(
+        "Einheiten: „Länge“ entfernt (identisch mit Höhe), neu: F-34 Kerosin Pfund ⇄ Liter (Dichte 0,80 kg/l).",
+    ),
     "1.4.0" to listOf(
         "Neu: Tagesüberblick am Morgen – eine Benachrichtigung mit Wetter (inkl. morgens/mittags/abends und DWD-Warnung), Terminen, fälligen Aufgaben, Fristen und dem ersten Termin von morgen.",
         "Erscheint eine Minute nach dem Handy-Wecker (4–12 Uhr) oder zur festen Uhrzeit, einmal pro Tag, wählbare Wochentage. Einstellungen unter Menü › Benachrichtigungen.",

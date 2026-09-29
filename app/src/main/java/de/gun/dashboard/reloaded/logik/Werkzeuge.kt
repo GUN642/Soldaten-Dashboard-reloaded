@@ -237,8 +237,9 @@ object Koordinaten {
 data class EinheitenPaar(val titel: String, val a: String, val b: String, val faktor: Double = 1.0, val temperatur: Boolean = false)
 
 val EINHEITEN = listOf(
-    EinheitenPaar("Länge", "Fuß (ft)", "Meter (m)", 0.3048),
     EinheitenPaar("Höhe", "Fuß (ft)", "Meter (m)", 0.3048),
+    // F-34 (JP-8): Dichte 0,80 kg/l bei 15 °C (zulässig ca. 0,775–0,840) -> 1 lbs = 0,567 l
+    EinheitenPaar("F-34 Kerosin (Dichte 0,80 kg/l)", "Pfund (lbs)", "Liter", 0.45359237 / 0.80),
     EinheitenPaar("Gewicht", "Pfund (lbs)", "Kilogramm (kg)", 0.45359237),
     EinheitenPaar("Strecke", "Seemeilen (NM)", "Kilometer (km)", 1.852),
     EinheitenPaar("Geschwindigkeit", "Knoten (kt)", "km/h", 1.852),
