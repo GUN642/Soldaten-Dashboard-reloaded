@@ -26,7 +26,11 @@ fun urlaubStand(d: AppDaten): UrlaubStand {
     )
 }
 
-fun mehrarbeitSaldo(d: AppDaten): Double = d.ueberstunden.startwert + d.ueberstunden.eintraege.sumOf { it.stunden }
+/** Mehrarbeit ohne geplante Einträge – die werden erst beim „Scharf schalten“ abgezogen. */
+fun mehrarbeitSaldo(d: AppDaten): Double = d.ueberstunden.startwert + d.ueberstunden.eintraege.filter { !it.geplant }.sumOf { it.stunden }
+
+/** Mehrarbeit inkl. der geplanten Einträge (z. B. geplanter FvD). */
+fun mehrarbeitSaldoGeplant(d: AppDaten): Double = d.ueberstunden.startwert + d.ueberstunden.eintraege.sumOf { it.stunden }
 
 /** Automatischer Zugang von 30 Tagen zu jedem neuen Jahr. */
 fun jahreswechsel(d: AppDaten): AppDaten {

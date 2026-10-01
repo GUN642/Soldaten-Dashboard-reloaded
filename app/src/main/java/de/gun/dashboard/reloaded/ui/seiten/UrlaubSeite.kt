@@ -22,6 +22,7 @@ import de.gun.dashboard.reloaded.daten.neueId
 import de.gun.dashboard.reloaded.logik.Feiertage
 import de.gun.dashboard.reloaded.logik.heuteDE
 import de.gun.dashboard.reloaded.logik.mehrarbeitSaldo
+import de.gun.dashboard.reloaded.logik.mehrarbeitSaldoGeplant
 import de.gun.dashboard.reloaded.logik.mitVorzeichen
 import de.gun.dashboard.reloaded.logik.parseDE
 import de.gun.dashboard.reloaded.logik.urlaubStand
@@ -56,6 +57,7 @@ fun UrlaubSeite() {
     val land = d.feiertagsLand.land
     val stand = urlaubStand(d)
     val saldo = mehrarbeitSaldo(d)
+    val saldoGeplant = mehrarbeitSaldoGeplant(d)
 
     var uOffen by remember { mutableStateOf(false) }
     var uVon by remember { mutableStateOf("") }
@@ -83,8 +85,10 @@ fun UrlaubSeite() {
                 Kennzahl(zahl(stand.rest), "Resturlaub (Tage)", if (stand.rest <= 0) p.rot else if (stand.rest <= 5) p.warn else p.gruen, Modifier.weight(1f))
                 Kennzahl(mitVorzeichen(saldo), "Mehrarbeit (Std)", if (saldo < 0) p.rot else if (saldo == 0.0) p.textDim else p.gruen, Modifier.weight(1f))
             }
-            if (stand.restGeplant != stand.rest) Mono("inkl. geplant: ${zahl(stand.restGeplant)} Tage", if (stand.restGeplant < 0) p.rot else p.neutral, 12.sp,
-                Modifier.padding(start = 6.dp, top = 6.dp))
+            Row(Modifier.padding(start = 6.dp, top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Mono(if (stand.restGeplant != stand.rest) "inkl. geplant: ${zahl(stand.restGeplant)} Tage" else "", if (stand.restGeplant < 0) p.rot else p.neutral, 12.sp, Modifier.weight(1f))
+                Mono(if (saldoGeplant != saldo) "inkl. geplant: ${mitVorzeichen(saldoGeplant)} Std" else "", if (saldoGeplant < 0) p.rot else p.neutral, 12.sp, Modifier.weight(1f))
+            }
         } }
         item {
             Karte("Urlaubskonto", "01") {

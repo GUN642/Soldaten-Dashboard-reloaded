@@ -125,6 +125,12 @@ class LogikTest {
         assertEquals("567", einheitRechnen(p, true, "1000"))   // 1000 lbs ≈ 567 l
         assertEquals("1763,7", einheitRechnen(p, false, "1000")) // 1000 l ≈ 1763,7 lbs
     }
+    @Test fun mehrarbeitGeplant() {
+        val d = AppDaten(ueberstunden = Ueberstunden(
+            listOf(UeberstundenEintrag("a", "01.09.2026", 10.0), UeberstundenEintrag("b", "05.10.2026", -8.0, geplant = true)), 2.0))
+        assertEquals(12.0, mehrarbeitSaldo(d), 0.001)
+        assertEquals(4.0, mehrarbeitSaldoGeplant(d), 0.001)
+    }
     @Test fun ics() {
         val t = icsLesen("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:x\r\nSUMMARY:Test\\, eins\r\nDTSTART;VALUE=DATE:20261003\r\nDTEND;VALUE=DATE:20261004\r\nEND:VEVENT\r\nEND:VCALENDAR")
         assertEquals("Test, eins", t[0].titel); assertTrue(t[0].allDay)

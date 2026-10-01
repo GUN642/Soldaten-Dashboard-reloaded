@@ -8,8 +8,8 @@ plugins {
 
 // Versionsnummer an genau einer Stelle. Die Update-Prüfung vergleicht sie mit
 // dem neuesten Release auf GitHub.
-val appVersionName = "1.4.1"
-val appVersionCode = 16
+val appVersionName = "1.4.2"
+val appVersionCode = 17
 
 android {
     namespace = "de.gun.dashboard.reloaded"

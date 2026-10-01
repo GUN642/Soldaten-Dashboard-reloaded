@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.4.2" to listOf(
+        "Mehrarbeit: geplante Einträge (z. B. geplanter FvD) werden nicht mehr direkt abgezogen; darunter steht „inkl. geplant“ wie beim Urlaub. Gilt auch auf HEUTE und im Widget.",
+    ),
     "1.4.1" to listOf(
         "Einheiten: „Länge“ entfernt (identisch mit Höhe), neu: F-34 Kerosin Pfund ⇄ Liter (Dichte 0,80 kg/l).",
     ),
