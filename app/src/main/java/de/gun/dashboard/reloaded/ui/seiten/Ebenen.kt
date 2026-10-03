@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.5.1" to listOf(
+        "Kalenderfarben: 18 Farben in umbrechenden Reihen (alle gut antippbar) und „+“ für eine frei wählbare Farbe (Farbton, Sättigung, Helligkeit oder Hex-Code).",
+    ),
     "1.5.0" to listOf(
         "Neu: Kalender übertragen (Kalender › ⚙) – kopiert alle Termine eines Gerätekalenders in einen anderen, z. B. Outlook → Google. Serien, geänderte Einzeltermine und Erinnerungen werden mitgenommen, vorhandene übersprungen; Vorschau vor dem Kopieren.",
         "App-Termine (Notiz, Anhänge, Anrechnung) werden automatisch auf die kopierten Einträge umgehängt.",

@@ -660,20 +660,90 @@ fun Klappbereich(beschriftung: String, offen: Boolean, onUmschalten: (Boolean) -
     }
 }
 
-/** Farbpunkte zur Auswahl. */
+/** Farbpunkte zur Auswahl, umbrechend, mit „+“ für eine frei gewählte Farbe. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FarbReihe(farben: List<String>, gewaehlt: String?, onWahl: (String) -> Unit) {
     val p = LocalPalette.current
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
+    var eigeneOffen by remember { mutableStateOf(false) }
+    val istEigene = gewaehlt != null && farben.none { it.equals(gewaehlt, true) }
+    FlowRow(
+        Modifier.fillMaxWidth().padding(top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         farben.forEach { hex ->
             val c = Color(de.gun.dashboard.reloaded.logik.farbeAusHex(hex))
             Box(
-                Modifier.size(24.dp).clip(CircleShape).background(c)
-                    .border(2.dp, if (hex.equals(gewaehlt, true)) p.text else Color.Transparent, CircleShape)
+                Modifier.size(30.dp).clip(CircleShape).background(c)
+                    .border(2.5.dp, if (hex.equals(gewaehlt, true)) p.text else Color.Transparent, CircleShape)
                     .clickable { onWahl(hex) }
             )
         }
+        // Frei gewählte Farbe: zeigt die aktuelle eigene Farbe oder ein „+“
+        Box(
+            Modifier.size(30.dp).clip(CircleShape)
+                .background(if (istEigene) Color(de.gun.dashboard.reloaded.logik.farbeAusHex(gewaehlt!!)) else Color.Transparent)
+                .border(if (istEigene) 2.5.dp else 1.dp, if (istEigene) p.text else p.rand, CircleShape)
+                .clickable { eigeneOffen = true },
+            contentAlignment = Alignment.Center,
+        ) { if (!istEigene) Text("+", color = p.textDim, fontSize = 16.sp, fontFamily = Schrift.mono) }
     }
+    if (eigeneOffen) FarbWahlDialog(gewaehlt ?: farben.first(), { eigeneOffen = false }) { onWahl(it); eigeneOffen = false }
 }
 
-val PALETTE_KALENDER = listOf("#5fb4ff", "#35d488", "#ffb020", "#ff5c5c", "#b98cff", "#ff8fc7", "#4dd0c4", "#8b96a5")
+/** Freie Farbwahl über Farbton, Sättigung und Helligkeit oder Hex-Code. */
+@Composable
+fun FarbWahlDialog(start: String, onAbbruch: () -> Unit, onFertig: (String) -> Unit) {
+    val p = LocalPalette.current
+    val hsv = remember {
+        FloatArray(3).also { android.graphics.Color.colorToHSV(de.gun.dashboard.reloaded.logik.farbeAusHex(start), it) }
+    }
+    var ton by remember { mutableStateOf(hsv[0]) }
+    var satt by remember { mutableStateOf(hsv[1]) }
+    var hell by remember { mutableStateOf(hsv[2]) }
+    fun hexAktuell(): String = String.format("#%06x", android.graphics.Color.HSVToColor(floatArrayOf(ton, satt, hell)) and 0xFFFFFF)
+    var hex by remember { mutableStateOf(hexAktuell()) }
+    val farbe = Color(android.graphics.Color.HSVToColor(floatArrayOf(ton, satt, hell)))
+    AlertDialog(
+        onDismissRequest = onAbbruch,
+        title = { Punkt("EIGENE FARBE", 18.sp) },
+        text = {
+            Column {
+                Box(Modifier.fillMaxWidth().height(48.dp).clip(RUND_KLEIN).background(farbe))
+                Abstand(8.dp)
+                // Farbton-Verlauf als Orientierung über dem Regler
+                Box(
+                    Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            (0..12).map { Color(android.graphics.Color.HSVToColor(floatArrayOf(it * 30f, 1f, 1f))) }
+                        )
+                    )
+                )
+                Etikett("Farbton")
+                Regler(ton, 0f..360f, 0, { ton = it; hex = hexAktuell() })
+                Etikett("Sättigung")
+                Regler(satt, 0f..1f, 0, { satt = it; hex = hexAktuell() })
+                Etikett("Helligkeit")
+                Regler(hell, 0f..1f, 0, { hell = it; hex = hexAktuell() })
+                Feld(hex, { v ->
+                    hex = v
+                    val t = v.trim().removePrefix("#")
+                    if (Regex("^[0-9a-fA-F]{6}$").matches(t)) {
+                        val f = FloatArray(3)
+                        android.graphics.Color.colorToHSV(("ff$t").toLong(16).toInt(), f)
+                        ton = f[0]; satt = f[1]; hell = f[2]
+                    }
+                }, "Hex-Code", platzhalter = "#5fb4ff")
+            }
+        },
+        confirmButton = { TextButton(onClick = { onFertig(hexAktuell()) }) { Text("ÜBERNEHMEN", fontFamily = Schrift.mono, color = p.akzent) } },
+        dismissButton = { TextButton(onClick = onAbbruch) { Text("ABBRECHEN", fontFamily = Schrift.mono, color = p.textDim) } },
+        containerColor = p.panel, shape = RUND,
+    )
+}
+
+val PALETTE_KALENDER = listOf(
+    "#5fb4ff", "#3f51b5", "#4dd0c4", "#35d488", "#0b8043", "#c0ca33",
+    "#ffd54f", "#ffb020", "#f4511e", "#ff5c5c", "#d50000", "#ff8fc7",
+    "#b98cff", "#8e24aa", "#795548", "#8b96a5", "#616161", "#e0e0e0",
+)
