@@ -131,6 +131,28 @@ class LogikTest {
         assertEquals(12.0, mehrarbeitSaldo(d), 0.001)
         assertEquals(4.0, mehrarbeitSaldoGeplant(d), 0.001)
     }
+    @Test fun verschwundeneTermine() {
+        val jahr = LocalDate.now().year
+        val tag = "02.10.$jahr"
+        val kal = de.gun.dashboard.reloaded.geraet.GeraetKalender("7", "Dienst intern", "x@outlook.de", "Outlook", 0, true)
+        val fvd = EigenerTermin(id = "fvd", titel = "FvD", von = tag, zeitVon = "07:00", zeitBis = "11:00", kalenderId = "7", nativId = "100", nativ = true)
+        val da = EigenerTermin(id = "da", titel = "Sport", von = tag, zeitVon = "15:00", zeitBis = "16:00", kalenderId = "7", nativId = "200", nativ = true)
+        val neuId = EigenerTermin(id = "neu", titel = "Wache", von = tag, ganztags = true, kalenderId = "7", nativId = "300", nativ = true)
+        val d = AppDaten(kalender = Kalender(eigene = listOf(fvd, da, neuId)))
+        val geraet = listOf(
+            de.gun.dashboard.reloaded.geraet.GeraetTermin(200, "7", "Sport", LocalDate.of(jahr, 10, 2).atTime(15, 0), null, false, "", "", null, 0),
+            // nach Neusynchronisation andere ID, gleicher Titel und Tag -> gilt als vorhanden
+            de.gun.dashboard.reloaded.geraet.GeraetTermin(999, "7", "Wache", LocalDate.of(jahr, 10, 2).atStartOfDay(), null, true, "", "", null, 0),
+        )
+        val b = TerminBestand(d, listOf(kal), geraet, emptyList())
+        assertEquals(setOf("fvd"), fehlendeEigeneIds(b))
+        // Der verschwundene FvD wird aus der App-Kopie angezeigt und markiert
+        val t = terminFenster(b, LocalDate.of(jahr, 10, 2), LocalDate.of(jahr, 10, 2), false)
+        assertTrue(t.any { it.eigenerId == "fvd" && it.fehltImGeraet })
+        assertFalse(t.any { it.eigenerId == "da" })
+        // Ohne eingelesene Kalender: keine Aussage, nichts als fehlend markiert
+        assertTrue(fehlendeEigeneIds(TerminBestand(d, emptyList(), emptyList(), emptyList())).isEmpty())
+    }
     @Test fun ics() {
         val t = icsLesen("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:x\r\nSUMMARY:Test\\, eins\r\nDTSTART;VALUE=DATE:20261003\r\nDTEND;VALUE=DATE:20261004\r\nEND:VEVENT\r\nEND:VCALENDAR")
         assertEquals("Test, eins", t[0].titel); assertTrue(t[0].allDay)

@@ -167,6 +167,7 @@ fun TerminDetailEbene(t: Termin) {
                 t.eventId == null && t.eigenerId == null -> Hinweis("Dieser Termin stammt aus einer eingebundenen Quelle und lässt sich hier nur ansehen.")
                 t.eventId != null && eigener == null -> Hinweis("Dieser Termin stammt aus einem Kalender des Geräts. Ändern und löschen wirkt sich dort aus.")
             }
+            if (t.fehltImGeraet && eigener != null) FehltImGeraet(eigener) { st.terminDetail = null }
             Knopfreihe {
                 if (t.istTodo) Knopf("Zur Aufgabe") { st.terminDetail = null; st.reiter = Reiter.TODO }
                 if (bearbeitbar) {
@@ -315,6 +316,10 @@ fun TerminMaskeEbene(start: MaskeStart) {
                 if (t != null) {
                     // ---- Ändern
                     var nativNeu: String? = null
+                    // Im Gerätekalender verschwunden: dort neu anlegen
+                    if (t.fehltImGeraet && kalId.isNotBlank() && GeraeteKalender.darfSchreiben(ctx)) {
+                        nativNeu = GeraeteKalender.anlegen(ctx, kalId, felder).toString()
+                    }
                     if (t.eventId != null) {
                         if (kalId.isNotBlank() && kalId != t.quelleId) {
                             // Kalenderwechsel: im neuen Kalender anlegen, im alten löschen
@@ -375,6 +380,7 @@ fun TerminMaskeEbene(start: MaskeStart) {
             Feld(titel, { titel = it }, "Titel *", platzhalter = "z. B. Besprechung Staffel")
             if (schreibbar.isNotEmpty()) {
                 Auswahl("Kalender", schreibbar.map { it.id to it.titel + "  [" + it.dienst + "]" + if (it.id == d.nativ.zielKalenderId) " (Standard)" else "" }, kalId) { kalId = it }
+                if (istOutlook(schreibbar.firstOrNull { it.id == kalId })) Fliesstext(OUTLOOK_HINWEIS, p.warn, 12.sp)
             } else Hinweis(
                 if (GeraeteKalender.darfLesen(ctx)) "Kein beschreibbarer Gerätekalender gefunden – der Termin wird nur in dieser App gespeichert."
                 else "Ohne Kalenderzugriff wird der Termin nur in dieser App gespeichert (Zugriff im Kalender unter ⚙ erteilen)."
@@ -432,6 +438,43 @@ fun TerminMaskeEbene(start: MaskeStart) {
 }
 
 /** Trägt einen neuen Termin im Urlaubs- bzw. Überstundenkonto ein. */
+/** Outlook-App gleicht Einträge fremder Apps oft nicht ab und entfernt sie wieder. */
+fun istOutlook(k: de.gun.dashboard.reloaded.geraet.GeraetKalender?): Boolean = k?.dienst == "Outlook"
+
+const val OUTLOOK_HINWEIS = "Achtung: Die Outlook-App übernimmt Termine anderer Apps oft nicht und löscht sie beim nächsten Abgleich wieder. " +
+    "Für zuverlässige Termine besser einen Google-Kalender oder den lokalen Gerätekalender wählen."
+
+/** Bevorzugter Kalender zum (erneuten) Eintragen: Standard, sofern nicht Outlook; sonst Google, Lokal, irgendeiner. */
+fun sichererKalender(schreibbar: List<de.gun.dashboard.reloaded.geraet.GeraetKalender>, standard: String): String =
+    schreibbar.firstOrNull { it.id == standard && !istOutlook(it) }?.id
+        ?: schreibbar.firstOrNull { it.dienst == "Google" }?.id
+        ?: schreibbar.firstOrNull { it.dienst == "Lokal" }?.id
+        ?: schreibbar.firstOrNull { !istOutlook(it) }?.id
+        ?: schreibbar.firstOrNull()?.id ?: ""
+
+/** Eigenen Termin neu in einen Gerätekalender schreiben und die Verknüpfung aktualisieren. */
+suspend fun erneutEintragen(ctx: android.content.Context, e: EigenerTermin, kalId: String) {
+    val s = parseDE(e.von) ?: throw IllegalStateException("Ungültiges Datum bei „${e.titel}“.")
+    val bis = parseDE(e.bis) ?: s
+    val felder = TerminFelder(
+        e.titel, e.ort, e.notiz, e.ganztags,
+        if (e.ganztags) s.atStartOfDay() else s.atTime(zeitAus(e.zeitVon) ?: java.time.LocalTime.of(8, 0)),
+        if (e.ganztags) bis.atStartOfDay() else bis.atTime(zeitAus(e.zeitBis) ?: java.time.LocalTime.of(16, 0)),
+        wdhZuRegel(e.wiederholung),
+    )
+    val id = GeraeteKalender.anlegen(ctx, kalId, felder)
+    Speicher.aendern { a ->
+        a.copy(kalender = a.kalender.copy(eigene = a.kalender.eigene.map {
+            if (it.id == e.id) it.copy(nativId = id.toString(), kalenderId = kalId, nativ = true) else it
+        }))
+    }
+}
+
+/** Verknüpfung lösen: Termin bleibt nur in der App. */
+fun nurInApp(e: EigenerTermin) = Speicher.aendern { a ->
+    a.copy(kalender = a.kalender.copy(eigene = a.kalender.eigene.map { if (it.id == e.id) it.copy(nativId = "", nativ = false) else it }))
+}
+
 fun anrechnen(a: AppDaten, t: EigenerTermin, art: String, geplant: Boolean, hinweis: (String) -> Unit): AppDaten {
     if (art == "keine") return a
     val von = parseDE(t.von) ?: return a
@@ -460,4 +503,47 @@ fun anrechnen(a: AppDaten, t: EigenerTermin, art: String, geplant: Boolean, hinw
     return a.copy(ueberstunden = a.ueberstunden.copy(eintraege = a.ueberstunden.eintraege + UeberstundenEintrag(
         neueId(), t.von, -Math.abs(dauer), (if (geplant) "FvD geplant: " else "FvD: ") + t.titel, geplant, "termin", t.uid
     )))
+}
+
+
+/** Hinweis und Aktionen für einen Termin, der im Gerätekalender verschwunden ist. */
+@Composable
+private fun FehltImGeraet(e: EigenerTermin, fertig: () -> Unit) {
+    val p = LocalPalette.current
+    val st = LocalSteuerung.current
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val d = aktuelleDaten()
+    val kalender by GeraeteKalender.kalender.collectAsState()
+    val schreibbar = kalender.filter { it.schreibbar && it.id !in d.nativ.entfernt }
+    var ziel by remember { mutableStateOf(sichererKalender(schreibbar, d.nativ.zielKalenderId)) }
+    val alt = kalender.firstOrNull { it.id == e.kalenderId }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(p.warnDim).padding(12.dp)) {
+        Fliesstext("Im Gerätekalender nicht mehr gefunden", p.warn, 14.sp, fett = true)
+        Fliesstext(
+            "Der Termin wurde " + (alt?.let { "in „${it.titel}“ [${it.dienst}] " } ?: "") + "eingetragen, ist dort aber verschwunden. " +
+                "Die App zeigt ihre eigene Kopie an – Notiz, Anhänge und Anrechnung sind erhalten." +
+                if (istOutlook(alt)) "\n\nOutlook entfernt Termine anderer Apps häufig beim Abgleich." else "",
+            p.text, 13.sp
+        )
+        if (schreibbar.isNotEmpty()) {
+            Abstand(6.dp)
+            Auswahl("Erneut eintragen in", schreibbar.map { it.id to it.titel + "  [" + it.dienst + "]" }, ziel) { ziel = it }
+            if (istOutlook(schreibbar.firstOrNull { it.id == ziel })) Fliesstext(OUTLOOK_HINWEIS, p.warn, 12.sp)
+        }
+        Knopfreihe {
+            if (schreibbar.isNotEmpty()) Knopf("Erneut eintragen", art = KnopfArt.PRIMAER, klein = true) {
+                scope.launch {
+                    try {
+                        erneutEintragen(ctx, e, ziel)
+                        Aktualisierung.geraetLadenJetzt(ctx)
+                        st.kurz("Termin wieder im Kalender eingetragen")
+                        fertig()
+                    } catch (x: Exception) { st.melden("Eintragen fehlgeschlagen", x.message ?: x.toString()) }
+                }
+            }
+            Knopf("Nur in der App behalten", klein = true) { nurInApp(e); st.kurz("Termin bleibt nur in der App"); fertig() }
+        }
+    }
+    Abstand()
 }

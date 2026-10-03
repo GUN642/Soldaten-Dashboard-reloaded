@@ -28,6 +28,8 @@ data class Termin(
     val todoId: String? = null,
     val istKontakt: Boolean = false,
     val schreibbar: Boolean = false,
+    /** Eigener Termin, dessen Eintrag im Gerätekalender verschwunden ist (z. B. von Outlook beim Abgleich entfernt). */
+    val fehltImGeraet: Boolean = false,
 ) {
     val ersterTag: LocalDate get() = start.toLocalDate()
 
@@ -137,9 +139,12 @@ fun terminFenster(b: TerminBestand, von: LocalDate, bis: LocalDate, mitAufgaben:
         }
     }
 
-    // 3) Eigene Termine, die nicht im Gerätekalender liegen
+    // 3) Eigene Termine, die nicht im Gerätekalender liegen – oder dort verschwunden sind
+    val fehlend = fehlendeEigeneIds(b)
     for (t in d.kalender.eigene) {
-        if (t.nativId.isNotBlank()) continue
+        val fehlt = t.id in fehlend
+        // Liegt der Termin im Gerätekalender, kommt er von dort; ohne Kalenderzugriff aus der App
+        if (t.nativId.isNotBlank() && !fehlt && b.geraetKalender.isNotEmpty()) continue
         val s = parseDE(t.von) ?: continue
         val e = parseDE(t.bis) ?: s
         val (a, z) = if (t.ganztags) s.atStartOfDay() to e.plusDays(1).atStartOfDay()
@@ -152,9 +157,10 @@ fun terminFenster(b: TerminBestand, von: LocalDate, bis: LocalDate, mitAufgaben:
         val regel = wdhZuRegel(t.wiederholung).ifBlank { null }
         for (vk in expandiere(a, z, t.ganztags, regel, vonZ, bisZ)) {
             liste += Termin(
-                quelleId = "eigene", quelleName = "Eigener Termin", farbe = FARBE_EIGENE, titel = t.titel,
+                quelleId = "eigene", quelleName = if (fehlt) "Eigener Termin · nicht mehr im Gerätekalender" else "Eigener Termin",
+                farbe = FARBE_EIGENE, titel = t.titel,
                 uid = "e:" + t.id + ":" + vk.start, ort = t.ort, notiz = t.notiz, start = vk.start, ende = vk.ende,
-                ganztags = t.ganztags, rrule = regel, eigenerId = t.id,
+                ganztags = t.ganztags, rrule = regel, eigenerId = t.id, fehltImGeraet = fehlt,
             )
         }
     }
@@ -197,6 +203,27 @@ fun terminFenster(b: TerminBestand, von: LocalDate, bis: LocalDate, mitAufgaben:
         }
     }
     return liste.sortedWith(compareBy({ it.start }, { !it.ganztags }))
+}
+
+/**
+ * Eigene Termine, die in den Gerätekalender geschrieben wurden, dort aber nicht mehr existieren.
+ * Gilt als vorhanden, wenn die Kalender-ID noch da ist oder ein Termin mit gleichem Titel und Beginn
+ * (falls ein Konto neu synchronisiert und dabei neue IDs vergeben hat). Ohne eingelesene Kalender: keine Aussage.
+ */
+fun fehlendeEigeneIds(b: TerminBestand): Set<String> {
+    if (b.geraetKalender.isEmpty()) return emptySet()
+    val ids = b.geraetTermine.mapTo(HashSet()) { it.eventId }
+    val schluessel = b.geraetTermine.mapTo(HashSet()) { it.titel.trim().lowercase() + "|" + it.start.toLocalDate() }
+    // Gerätetermine werden nur für dieses Fenster eingelesen (siehe GeraeteKalender.fenster)
+    val jahr = LocalDate.now().year
+    val fensterVon = LocalDate.of(jahr - 2, 1, 1)
+    val fensterBis = LocalDate.of(jahr + 3, 12, 31)
+    return b.daten.kalender.eigene.filter { t ->
+        val id = t.nativId.toLongOrNull() ?: return@filter false
+        val tag = parseDE(t.von) ?: return@filter false
+        if (tag.isBefore(fensterVon) || tag.isAfter(fensterBis)) return@filter false
+        id !in ids && (t.titel.trim().lowercase() + "|" + tag) !in schluessel
+    }.mapTo(HashSet()) { it.id }
 }
 
 /** Termine, die an einem bestimmten Tag liegen. */

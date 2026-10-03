@@ -266,6 +266,11 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.4.3" to listOf(
+        "Termine, die im Gerätekalender verschwunden sind (z. B. von Outlook beim Abgleich entfernt), zeigt die App wieder aus ihrer eigenen Kopie an – mit Hinweis und „Erneut eintragen“.",
+        "Kalender › ⚙ › „Termine prüfen“: listet alle verschwundenen Termine, „Alle erneut eintragen“ in einen Kalender deiner Wahl.",
+        "Warnung bei Outlook-Kalendern als Ziel: Die Outlook-App übernimmt Termine anderer Apps oft nicht und löscht sie wieder.",
+    ),
     "1.4.2" to listOf(
         "Mehrarbeit: geplante Einträge (z. B. geplanter FvD) werden nicht mehr direkt abgezogen; darunter steht „inkl. geplant“ wie beim Urlaub. Gilt auch auf HEUTE und im Widget.",
     ),

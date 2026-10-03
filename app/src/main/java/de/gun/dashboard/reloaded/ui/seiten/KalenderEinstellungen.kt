@@ -1,5 +1,7 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import de.gun.dashboard.reloaded.logik.parseDE
+import de.gun.dashboard.reloaded.logik.fehlendeEigeneIds
 import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -119,7 +121,8 @@ fun KalenderEinstellungen() {
                     if (!darf) "Kalenderzugriff fehlt." else "${kalender.size} Kalender · ${termine.size} Termine" +
                         (if (anlaesse.isNotEmpty()) " · ${anlaesse.size} Kontaktdaten" else ""), p.textDim, 13.sp
                 )
-                Hinweis("Termine werden direkt im Gerätekalender gespeichert. Liegt dort dein Outlook- oder Google-Konto, überträgt Android sie selbst in die Cloud.")
+                Hinweis("Termine werden direkt im Gerätekalender gespeichert. Liegt dort dein Google-Konto, überträgt Android sie selbst in die Cloud. " +
+                    "Outlook-Kalender übernehmen Termine anderer Apps oft nicht und entfernen sie wieder.")
                 Knopfreihe {
                     Knopf(if (darf) "↻ Neu einlesen" else "Zugriff erlauben", klein = true) {
                         if (darf) scope.launch { Aktualisierung.geraetLadenJetzt(ctx); st.kurz("Eingelesen") }
@@ -135,6 +138,7 @@ fun KalenderEinstellungen() {
                     listOf("" to "— bitte auswählen —") + kalender.filter { it.schreibbar }.map { it.id to it.titel + " [" + it.dienst + "]" },
                     d.nativ.zielKalenderId
                 ) { id -> Speicher.aendern { it.copy(nativ = it.nativ.copy(zielKalenderId = id)) } }
+                if (istOutlook(kalender.firstOrNull { it.id == d.nativ.zielKalenderId })) Fliesstext(OUTLOOK_HINWEIS, p.warn, 12.sp)
                 Abstand(8.dp)
                 Knopfreihe {
                     Pille("Geburtstage", d.nativ.geburtstage) { Speicher.aendern { it.copy(nativ = it.nativ.copy(geburtstage = !it.nativ.geburtstage)) } }
@@ -146,6 +150,8 @@ fun KalenderEinstellungen() {
                 }
             }
         }
+        // Termine der App, die im Gerätekalender verschwunden sind
+        item { FehlendeTermine() }
         // Kalenderliste, gruppiert nach Konto
         val reihenfolge = listOf("Google", "Outlook", "iCloud", "Samsung", "Lokal", "Abonniert")
         val sortiert = kalender.filter { it.id !in d.nativ.entfernt }
@@ -356,5 +362,54 @@ private fun QuellenKarte(onLoeschen: (KalenderQuelle) -> Unit) {
                 }
             }
         }
+    }
+}
+
+
+/** Prüfung: eigene Termine, deren Eintrag im Gerätekalender fehlt – mit „Alle erneut eintragen“. */
+@Composable
+private fun FehlendeTermine() {
+    val p = LocalPalette.current
+    val st = LocalSteuerung.current
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val b = rememberBestand()
+    val d = b.daten
+    val fehlend = remember(b) { fehlendeEigeneIds(b) }
+    val liste = d.kalender.eigene.filter { it.id in fehlend }.sortedBy { parseDE(it.von) }
+    val schreibbar = b.geraetKalender.filter { it.schreibbar && it.id !in d.nativ.entfernt }
+    var ziel by remember(schreibbar.size) { mutableStateOf(sichererKalender(schreibbar, d.nativ.zielKalenderId)) }
+    var laeuft by remember { mutableStateOf(false) }
+    Karte("Termine prüfen", "✓") {
+        if (b.geraetKalender.isEmpty()) { Hinweis("Ohne Kalenderzugriff ist keine Prüfung möglich."); return@Karte }
+        if (liste.isEmpty()) { Fliesstext("Alle in der App angelegten Termine sind im Gerätekalender vorhanden.", p.gruen, 13.sp); return@Karte }
+        Fliesstext("${liste.size} Termin" + (if (liste.size == 1) " ist" else "e sind") + " im Gerätekalender verschwunden:", p.warn, 13.sp, fett = true)
+        Abstand(4.dp)
+        liste.take(30).forEach { e ->
+            val k = b.geraetKalender.firstOrNull { it.id == e.kalenderId }
+            Mono(e.von + (if (!e.ganztags && e.zeitVon.isNotBlank()) " " + e.zeitVon else "") + " · " + e.titel +
+                (k?.let { " · war in ${it.titel} [${it.dienst}]" } ?: ""), p.text, 11.sp)
+        }
+        if (liste.size > 30) Mono("… und ${liste.size - 30} weitere", p.textDim, 11.sp)
+        Abstand(8.dp)
+        if (schreibbar.isEmpty()) { Hinweis("Kein beschreibbarer Kalender vorhanden."); return@Karte }
+        Auswahl("Erneut eintragen in", schreibbar.map { it.id to it.titel + "  [" + it.dienst + "]" }, ziel) { ziel = it }
+        if (istOutlook(schreibbar.firstOrNull { it.id == ziel })) Fliesstext(OUTLOOK_HINWEIS, p.warn, 12.sp)
+        Knopfreihe {
+            Knopf(if (laeuft) "Trägt ein …" else "Alle erneut eintragen", art = KnopfArt.PRIMAER, klein = true, aktiv = !laeuft) {
+                laeuft = true
+                scope.launch {
+                    var ok = 0
+                    var fehler = 0
+                    for (e in liste) { try { erneutEintragen(ctx, e, ziel); ok++ } catch (x: Exception) { fehler++ } }
+                    Aktualisierung.geraetLadenJetzt(ctx)
+                    laeuft = false
+                    st.melden("Termine eingetragen", "$ok Termin" + (if (ok == 1) "" else "e") + " wieder im Kalender." +
+                        if (fehler > 0) " $fehler konnten nicht eingetragen werden." else "")
+                }
+            }
+            Knopf("Alle nur in der App behalten", klein = true, aktiv = !laeuft) { liste.forEach { nurInApp(it) } }
+        }
+        Hinweis("Notizen, Anhänge und Anrechnungen (Urlaub, FvD) bleiben in jedem Fall erhalten.")
     }
 }
