@@ -149,7 +149,9 @@ class LogikTest {
         // Der verschwundene FvD wird aus der App-Kopie angezeigt und markiert
         val t = terminFenster(b, LocalDate.of(jahr, 10, 2), LocalDate.of(jahr, 10, 2), false)
         assertTrue(t.any { it.eigenerId == "fvd" && it.fehltImGeraet })
-        assertFalse(t.any { it.eigenerId == "da" })
+        // vorhandener Termin kommt nur aus dem Gerätekalender, nicht zusätzlich aus der App-Kopie
+        assertEquals(1, t.count { it.eigenerId == "da" || it.titel == "Sport" })
+        assertFalse(t.any { it.quelleId == "eigene" && it.titel == "Sport" })
         // Ohne eingelesene Kalender: keine Aussage, nichts als fehlend markiert
         assertTrue(fehlendeEigeneIds(TerminBestand(d, emptyList(), emptyList(), emptyList())).isEmpty())
     }
