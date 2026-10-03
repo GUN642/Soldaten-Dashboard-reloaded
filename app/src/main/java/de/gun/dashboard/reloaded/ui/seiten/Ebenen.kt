@@ -266,6 +266,10 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.5.0" to listOf(
+        "Neu: Kalender übertragen (Kalender › ⚙) – kopiert alle Termine eines Gerätekalenders in einen anderen, z. B. Outlook → Google. Serien, geänderte Einzeltermine und Erinnerungen werden mitgenommen, vorhandene übersprungen; Vorschau vor dem Kopieren.",
+        "App-Termine (Notiz, Anhänge, Anrechnung) werden automatisch auf die kopierten Einträge umgehängt.",
+    ),
     "1.4.3" to listOf(
         "Termine, die im Gerätekalender verschwunden sind (z. B. von Outlook beim Abgleich entfernt), zeigt die App wieder aus ihrer eigenen Kopie an – mit Hinweis und „Erneut eintragen“.",
         "Kalender › ⚙ › „Termine prüfen“: listet alle verschwundenen Termine, „Alle erneut eintragen“ in einen Kalender deiner Wahl.",

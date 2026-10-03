@@ -1,5 +1,6 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import de.gun.dashboard.reloaded.ui.Segmente
 import de.gun.dashboard.reloaded.logik.parseDE
 import de.gun.dashboard.reloaded.logik.fehlendeEigeneIds
 import android.Manifest
@@ -152,6 +153,7 @@ fun KalenderEinstellungen() {
         }
         // Termine der App, die im Gerätekalender verschwunden sind
         item { FehlendeTermine() }
+        item { KalenderUebertragen() }
         // Kalenderliste, gruppiert nach Konto
         val reihenfolge = listOf("Google", "Outlook", "iCloud", "Samsung", "Lokal", "Abonniert")
         val sortiert = kalender.filter { it.id !in d.nativ.entfernt }
@@ -411,5 +413,83 @@ private fun FehlendeTermine() {
             Knopf("Alle nur in der App behalten", klein = true, aktiv = !laeuft) { liste.forEach { nurInApp(it) } }
         }
         Hinweis("Notizen, Anhänge und Anrechnungen (Urlaub, FvD) bleiben in jedem Fall erhalten.")
+    }
+}
+
+
+/** Termine von einem Gerätekalender in einen anderen kopieren (z. B. Outlook → Google). */
+@Composable
+private fun KalenderUebertragen() {
+    val p = LocalPalette.current
+    val st = LocalSteuerung.current
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val d = aktuelleDaten()
+    val kalender by GeraeteKalender.kalender.collectAsState()
+    val alle = kalender.filter { it.id !in d.nativ.entfernt }
+    val schreibbar = alle.filter { it.schreibbar }
+    var quelle by remember { mutableStateOf(alle.firstOrNull { istOutlook(it) }?.id ?: "") }
+    var ziel by remember { mutableStateOf(sichererKalender(schreibbar.filter { it.id != quelle }, d.nativ.zielKalenderId)) }
+    var zeitraum by remember { mutableStateOf("alles") }
+    var plan by remember { mutableStateOf<de.gun.dashboard.reloaded.geraet.UebertragungsPlan?>(null) }
+    var status by remember { mutableStateOf("") }
+    var laeuft by remember { mutableStateOf(false) }
+
+    fun abMs(): Long? = when (zeitraum) {
+        "heute" -> java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        "jahr" -> java.time.LocalDate.now().withDayOfYear(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        else -> null
+    }
+
+    Karte("Kalender übertragen", "⇄") {
+        Hinweis("Kopiert alle Termine eines Kalenders direkt auf dem Gerät in einen anderen – z. B. von Outlook zu Google. Serien bleiben Serien, Erinnerungen werden mitgenommen, bereits vorhandene Termine übersprungen. Der Quellkalender bleibt unverändert.")
+        if (alle.isEmpty()) { Hinweis("Kein Kalender gefunden – zuerst den Kalenderzugriff erlauben."); return@Karte }
+        Auswahl("Von (Quelle)", listOf("" to "— auswählen —") + alle.map { it.id to it.titel + "  [" + it.dienst + "]" }, quelle) { quelle = it; plan = null; status = "" }
+        Auswahl("Nach (Ziel)", listOf("" to "— auswählen —") + schreibbar.filter { it.id != quelle }.map { it.id to it.titel + "  [" + it.dienst + "]" }, ziel) { ziel = it; plan = null; status = "" }
+        if (istOutlook(schreibbar.firstOrNull { it.id == ziel })) Fliesstext(OUTLOOK_HINWEIS, p.warn, 12.sp)
+        Segmente(listOf("alles" to "Alles", "jahr" to "Ab 1.1.", "heute" to "Ab heute"), zeitraum) { zeitraum = it; plan = null; status = "" }
+        Knopfreihe {
+            Knopf("Vorschau", klein = true, aktiv = quelle.isNotBlank() && ziel.isNotBlank() && quelle != ziel && !laeuft) {
+                scope.launch {
+                    try {
+                        plan = de.gun.dashboard.reloaded.geraet.KalenderUebertragung.planen(ctx, quelle, ziel, abMs())
+                        status = ""
+                    } catch (e: Exception) { status = "Lesen fehlgeschlagen: " + (e.message ?: e.toString()) }
+                }
+            }
+        }
+        plan?.let { pl ->
+            Fliesstext(
+                "${pl.termine.size} Termine werden kopiert" +
+                    (if (pl.serien > 0) ", davon ${pl.serien} Serien" else "") +
+                    (if (pl.ausnahmen > 0) " und ${pl.ausnahmen} geänderte Einzeltermine von Serien" else "") + "." +
+                    (if (pl.schonVorhanden > 0) " ${pl.schonVorhanden} sind im Ziel schon vorhanden und werden übersprungen." else ""),
+                p.text, 13.sp
+            )
+            if (pl.termine.isNotEmpty()) Knopfreihe {
+                Knopf(if (laeuft) status else "Jetzt übertragen", art = KnopfArt.PRIMAER, klein = true, aktiv = !laeuft) {
+                    laeuft = true
+                    scope.launch {
+                        try {
+                            val erg = de.gun.dashboard.reloaded.geraet.KalenderUebertragung.ausfuehren(ctx, pl, ziel) { i, n -> status = "Kopiere $i / $n …" }
+                            Aktualisierung.geraetLadenJetzt(ctx)
+                            plan = null
+                            status = ""
+                            st.melden(
+                                "Übertragung abgeschlossen",
+                                "${erg.kopiert} Termine kopiert." +
+                                    (if (erg.fehler > 0) " ${erg.fehler} konnten nicht kopiert werden." else "") +
+                                    (if (erg.neuVerknuepft > 0) " ${erg.neuVerknuepft} App-Termine (Notiz, Anhänge, Anrechnung) hängen jetzt am neuen Kalender." else "") +
+                                    "\n\nPrüfe das Ergebnis im Ziel und blende den alten Kalender danach unter „Kalender“ aus. Gelöscht wird nichts."
+                            )
+                        } catch (e: Exception) {
+                            st.melden("Übertragung fehlgeschlagen", e.message ?: e.toString())
+                        } finally { laeuft = false }
+                    }
+                }
+            }
+        }
+        if (status.isNotBlank() && !laeuft) Hinweis(status)
+        Hinweis("Kopiert wird, was auf dem Gerät liegt. Gleicht Outlook nur einen Teil der Vergangenheit ab, fehlen ältere Termine – die gibt es über den ICS-Export.")
     }
 }

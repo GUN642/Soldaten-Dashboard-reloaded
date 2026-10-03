@@ -155,6 +155,20 @@ class LogikTest {
         // Ohne eingelesene Kalender: keine Aussage, nichts als fehlend markiert
         assertTrue(fehlendeEigeneIds(TerminBestand(d, emptyList(), emptyList(), emptyList())).isEmpty())
     }
+    @Test fun uebertragung() {
+        assertEquals(3_600_000L, dauerMs("P3600S"))
+        assertEquals(5_400_000L, dauerMs("PT1H30M"))
+        assertEquals(86_400_000L, dauerMs("P1D"))
+        assertEquals(1_209_600_000L, dauerMs("P2W"))
+        assertNull(dauerMs("quatsch"))
+        assertEquals("P2D", dauerText(2 * 86_400_000L, true))
+        assertEquals("P3600S", dauerText(3_600_000L, false))
+        val ms = LocalDateTime.of(2026, 10, 2, 7, 0).atZone(ZoneId.of("Europe/Berlin")).toInstant().toEpochMilli()
+        assertEquals("20261002T050000Z", exdateAnhaengen(null, ms))
+        assertEquals("20261001T050000Z,20261002T050000Z", exdateAnhaengen("20261001T050000Z", ms))
+        assertEquals("Europe/Berlin;20261001T070000,20261002T070000", exdateAnhaengen("Europe/Berlin;20261001T070000", ms))
+        assertEquals(terminSchluessel(" FvD ", 5), terminSchluessel("fvd", 5))
+    }
     @Test fun ics() {
         val t = icsLesen("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:x\r\nSUMMARY:Test\\, eins\r\nDTSTART;VALUE=DATE:20261003\r\nDTEND;VALUE=DATE:20261004\r\nEND:VEVENT\r\nEND:VCALENDAR")
         assertEquals("Test, eins", t[0].titel); assertTrue(t[0].allDay)
