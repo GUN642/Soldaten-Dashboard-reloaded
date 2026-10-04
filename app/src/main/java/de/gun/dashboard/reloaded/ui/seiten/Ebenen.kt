@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.5.2" to listOf(
+        "Kalender: Feiertage deutlich rot hinterlegt und rot umrandet (Monat und Woche), in der Wochenansicht ist die ganze Spalte leicht rot.",
+    ),
     "1.5.1" to listOf(
         "Kalenderfarben: 18 Farben in umbrechenden Reihen (alle gut antippbar) und „+“ für eine frei wählbare Farbe (Farbton, Sättigung, Helligkeit oder Hex-Code).",
     ),

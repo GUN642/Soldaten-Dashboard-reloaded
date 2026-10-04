@@ -285,14 +285,19 @@ private fun MonatsRaster(
                             val gewaehlt = tag == st.kalenderTag
                             val hg = when {
                                 gewaehlt -> p.akzentDim
-                                ft != null -> p.rotDim.copy(alpha = 0.55f)
+                                // Feiertage deutlich rot hinterlegt und rot umrandet
+                                ft != null -> p.rot.copy(alpha = 0.30f)
                                 fer != null -> p.gruenDim.copy(alpha = 0.5f)
                                 i >= 5 -> p.panelAlt
                                 else -> Color.Transparent
                             }
                             Box(
                                 Modifier.weight(1f).fillMaxHeight().padding(1.dp).clip(RoundedCornerShape(6.dp)).background(hg)
-                                    .border(if (gewaehlt) 1.dp else 0.5.dp, if (gewaehlt) p.akzent else p.randLeise, RoundedCornerShape(6.dp))
+                                    .border(
+                                        if (gewaehlt || ft != null) 1.dp else 0.5.dp,
+                                        if (gewaehlt) p.akzent else if (ft != null) p.rot.copy(alpha = 0.85f) else p.randLeise,
+                                        RoundedCornerShape(6.dp)
+                                    )
                                     .pointerInput(tag) {
                                         detectTapGestures(
                                             onTap = { st.kalenderTag = if (st.kalenderTag == tag && !gross) null else tag; if (gross) st.kalenderGross = false },

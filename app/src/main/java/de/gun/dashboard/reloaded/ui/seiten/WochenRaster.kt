@@ -200,8 +200,12 @@ private fun WochenSeite(ws: LocalDate, daten: WochenDaten?, b: TerminBestand) {
                     Column(
                         Modifier.width(spaltenB).padding(horizontal = 1.5.dp).heightIn(min = 64.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (ft != null) p.rotDim.copy(alpha = 0.5f) else p.panel)
-                            .then(if (istHeute) Modifier.border(1.5.dp, p.rand, RoundedCornerShape(8.dp)) else Modifier)
+                            .background(if (ft != null) p.rot.copy(alpha = 0.30f) else p.panel)
+                            .then(
+                                if (istHeute) Modifier.border(1.5.dp, p.rand, RoundedCornerShape(8.dp))
+                                else if (ft != null) Modifier.border(1.dp, p.rot.copy(alpha = 0.85f), RoundedCornerShape(8.dp))
+                                else Modifier
+                            )
                             .pointerInput(tag) { detectTapGestures(onLongPress = { haptik.performHapticFeedback(HapticFeedbackType.LongPress); st.maske = MaskeStart(datum = tag) }) }
                             .padding(bottom = 3.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -249,6 +253,11 @@ private fun WochenSeite(ws: LocalDate, daten: WochenDaten?, b: TerminBestand) {
                         })
                     }
                 )
+                // Feiertage: ganze Spalte leicht rot
+                for (i in 0..6) {
+                    if (Feiertage.name(ws.plusDays(i.toLong()), b.daten.feiertagsLand.land) != null)
+                        Box(Modifier.offset(x = RAND_LINKS + spaltenB * i).width(spaltenB).height(hoehe).background(p.rot.copy(alpha = 0.10f)))
+                }
                 // Terminblöcke
                 daten?.bloecke?.forEach { bl -> TerminBlock(bl, spaltenB) }
                 // Jetzt-Linie
