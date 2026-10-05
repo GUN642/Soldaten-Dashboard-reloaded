@@ -169,6 +169,17 @@ class LogikTest {
         assertEquals("Europe/Berlin;20261001T070000,20261002T070000", exdateAnhaengen("Europe/Berlin;20261001T070000", ms))
         assertEquals(terminSchluessel(" FvD ", 5), terminSchluessel("fvd", 5))
     }
+    @Test fun terminLaenge() {
+        fun t(von: LocalDateTime, bis: LocalDateTime, ganz: Boolean = false) =
+            Termin("q", "Q", 0, "X", "u", start = von, ende = bis, ganztags = ganz)
+        // Mo 05.10. – Fr 09.10.2026 ganztägig (Ende exklusiv Sa 00:00): 5 Kalendertage, 5 Arbeitstage
+        assertEquals("5 Kalendertage · 5 Arbeitstage", terminDauer(t(LocalDateTime.of(2026, 10, 5, 0, 0), LocalDateTime.of(2026, 10, 10, 0, 0), true), "BW"))
+        // Fr 02.10. – Mo 05.10. inkl. Wochenende und 3. Oktober: 4 Kalendertage, 2 Arbeitstage
+        assertEquals("4 Kalendertage · 2 Arbeitstage", terminDauer(t(LocalDateTime.of(2026, 10, 2, 0, 0), LocalDateTime.of(2026, 10, 6, 0, 0), true), "BW"))
+        assertEquals("1 Kalendertag · 4 Std", terminDauer(t(LocalDateTime.of(2026, 10, 2, 7, 0), LocalDateTime.of(2026, 10, 2, 11, 0)), "BW"))
+        assertEquals("1 Kalendertag · 1 Std 30 Min", terminDauer(t(LocalDateTime.of(2026, 10, 2, 7, 0), LocalDateTime.of(2026, 10, 2, 8, 30)), "BW"))
+        assertEquals("1 Kalendertag", terminDauer(t(LocalDateTime.of(2026, 10, 2, 0, 0), LocalDateTime.of(2026, 10, 3, 0, 0), true), "BW"))
+    }
     @Test fun ics() {
         val t = icsLesen("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:x\r\nSUMMARY:Test\\, eins\r\nDTSTART;VALUE=DATE:20261003\r\nDTEND;VALUE=DATE:20261004\r\nEND:VEVENT\r\nEND:VCALENDAR")
         assertEquals("Test, eins", t[0].titel); assertTrue(t[0].allDay)

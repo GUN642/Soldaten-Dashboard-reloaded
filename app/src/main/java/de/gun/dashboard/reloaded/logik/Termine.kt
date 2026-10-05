@@ -226,6 +226,29 @@ fun fehlendeEigeneIds(b: TerminBestand): Set<String> {
     }.mapTo(HashSet()) { it.id }
 }
 
+/**
+ * Länge eines Termins: Kalendertage (erster bis letzter Tag einschließlich),
+ * bei mehreren Tagen zusätzlich Arbeitstage (Mo–Fr ohne Feiertage), bei einem Tag mit Uhrzeit die Stunden.
+ */
+fun terminDauer(t: Termin, land: String): String {
+    val tage = java.time.temporal.ChronoUnit.DAYS.between(t.ersterTag, t.letzterTag).toInt() + 1
+    val kal = if (tage == 1) "1 Kalendertag" else "$tage Kalendertage"
+    if (tage > 1) {
+        val arbeit = Feiertage.arbeitstage(t.ersterTag, t.letzterTag, land)
+        return kal + " · " + (if (arbeit == 1) "1 Arbeitstag" else "$arbeit Arbeitstage")
+    }
+    val e = t.ende
+    if (t.ganztags || e == null || !e.isAfter(t.start)) return kal
+    val min = java.time.temporal.ChronoUnit.MINUTES.between(t.start, e)
+    val h = min / 60
+    val m = min % 60
+    return kal + " · " + when {
+        h == 0L -> "$m Min"
+        m == 0L -> "$h Std"
+        else -> "$h Std $m Min"
+    }
+}
+
 /** Termine, die an einem bestimmten Tag liegen. */
 fun termineAm(b: TerminBestand, tag: LocalDate, mitAufgaben: Boolean): List<Termin> =
     terminFenster(b, tag, tag, mitAufgaben).filter { it.liegtAuf(tag) }

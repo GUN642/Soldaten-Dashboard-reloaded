@@ -49,6 +49,7 @@ import de.gun.dashboard.reloaded.logik.hhmm
 import de.gun.dashboard.reloaded.logik.lang
 import de.gun.dashboard.reloaded.logik.parseDE
 import de.gun.dashboard.reloaded.logik.regelZuWdh
+import de.gun.dashboard.reloaded.logik.terminDauer
 import de.gun.dashboard.reloaded.logik.wdhZuRegel
 import de.gun.dashboard.reloaded.logik.zahl
 import de.gun.dashboard.reloaded.logik.zeitAus
@@ -149,6 +150,7 @@ fun TerminDetailEbene(t: Termin) {
             Fliesstext(t.titel, groesse = 22.sp, fett = true)
             Abstand()
             DetailZeile("Zeit", zeitText(t))
+            if (!t.istTodo) DetailZeile("Dauer", terminDauer(t, d.feiertagsLand.land))
             if (t.ort.isNotBlank()) DetailZeile("Ort", t.ort)
             DetailZeile("Kalender", t.quelleName)
             if (t.istSerie) DetailZeile("Wiederholung", regelZuWdh(t.rrule)?.let { WDH_NAMEN[it] } ?: "Serie")

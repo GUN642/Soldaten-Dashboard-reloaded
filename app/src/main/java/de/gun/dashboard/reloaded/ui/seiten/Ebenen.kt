@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.5.3" to listOf(
+        "Termin-Details zeigen die Dauer: Kalendertage, bei mehrtägigen Terminen zusätzlich Arbeitstage (Mo–Fr ohne Feiertage), bei eintägigen mit Uhrzeit die Stunden.",
+    ),
     "1.5.2" to listOf(
         "Kalender: Feiertage deutlich rot hinterlegt und rot umrandet (Monat und Woche), in der Wochenansicht ist die ganze Spalte leicht rot.",
     ),
