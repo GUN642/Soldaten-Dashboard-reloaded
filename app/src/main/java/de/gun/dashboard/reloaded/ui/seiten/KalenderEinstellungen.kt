@@ -303,8 +303,16 @@ private fun QuellenKarte(onLoeschen: (KalenderQuelle) -> Unit) {
         }
     }
 
-    Karte("Kalenderquellen (ICS / Abo)", "02") {
+    Karte("Kalenderquellen (ICS / Abo)", "02", aktion = {
+        if (d.kalender.quellen.any { it.url.isNotBlank() }) Symbol("↻") {
+            scope.launch {
+                val (ok, fehler) = de.gun.dashboard.reloaded.netz.AboAktualisierung.aktualisieren(alle = true)
+                st.kurz("$ok Abo" + (if (ok == 1) "" else "s") + " aktualisiert" + if (fehler > 0) " · $fehler fehlgeschlagen" else "")
+            }
+        }
+    }) {
         if (d.kalender.quellen.isEmpty()) Leer("Keine eingebundenen Kalender.")
+        if (d.kalender.quellen.any { it.url.isNotBlank() }) Hinweis("Abos werden einmal täglich automatisch aktualisiert (bei Internetverbindung).")
         d.kalender.quellen.forEach { q ->
             Zeile(Color(farbeAusHex(d.farbenEigen[q.id] ?: q.farbe)), aktionen = {
                 if (q.url.isNotBlank()) Symbol("↻") {

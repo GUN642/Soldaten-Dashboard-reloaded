@@ -266,6 +266,10 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.5.4" to listOf(
+        "Abonnierte Kalender (ICS-Links) werden einmal täglich automatisch aktualisiert – im Hintergrund und beim App-Start, falls heute noch nicht geschehen.",
+        "Kalender › ⚙ › Kalenderquellen: ↻ aktualisiert alle Abos auf einmal.",
+    ),
     "1.5.3" to listOf(
         "Termin-Details zeigen die Dauer: Kalendertage, bei mehrtägigen Terminen zusätzlich Arbeitstage (Mo–Fr ohne Feiertage), bei eintägigen mit Uhrzeit die Stunden.",
     ),

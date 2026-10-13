@@ -26,6 +26,11 @@ class App : Application() {
         de.gun.dashboard.reloaded.erinnerung.Tagesueberblick.kanalAnlegen(this)
         try { de.gun.dashboard.reloaded.erinnerung.Tagesueberblick.planen(this) } catch (e: Exception) { }
         Speicher.beiAenderung = { Aktualisierung.nachAenderung(this) }
+        // Abonnierte Kalender: täglich im Hintergrund, beim Start nachholen falls heute noch nicht geschehen
+        de.gun.dashboard.reloaded.netz.AboAktualisierung.planen(this)
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO).launch {
+            try { de.gun.dashboard.reloaded.netz.AboAktualisierung.aktualisieren() } catch (e: Exception) { }
+        }
         // Automatischer Urlaubszugang zum Jahreswechsel
         if (jahreswechsel(Speicher.aktuell) != Speicher.aktuell) Speicher.aendern { jahreswechsel(it) }
     }
