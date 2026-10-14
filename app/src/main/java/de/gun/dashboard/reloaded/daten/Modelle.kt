@@ -400,6 +400,8 @@ data class Design(
     val punktRaster: Boolean = true,
     /** Reiterleiste unten statt oben. */
     val reiterUnten: Boolean = false,
+    /** Hoher Kontrast: Bereiche deutlicher abgesetzt. */
+    val kontrast: Boolean = true,
 )
 
 @Serializable

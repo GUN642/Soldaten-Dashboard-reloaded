@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.5.5" to listOf(
+        "Neu: „Hoher Kontrast“ (Menü › Design, standardmäßig an) – Bereiche heben sich deutlich vom Hintergrund ab, kräftigere Ränder, Einträge innerhalb der Bereiche klar abgesetzt. In allen Themen.",
+    ),
     "1.5.4" to listOf(
         "Abonnierte Kalender (ICS-Links) werden einmal täglich automatisch aktualisiert – im Hintergrund und beim App-Start, falls heute noch nicht geschehen.",
         "Kalender › ⚙ › Kalenderquellen: ↻ aktualisiert alle Abos auf einmal.",

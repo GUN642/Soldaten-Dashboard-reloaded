@@ -164,7 +164,7 @@ fun Karte(
             .fillMaxWidth()
             .clip(RUND)
             .background(p.panel)
-            .border(1.dp, p.rand, RUND)
+            .border(if (p.kontrast) 1.5.dp else 1.dp, p.rand, RUND)
             .padding(16.dp)
     ) {
         if (titel != null) {

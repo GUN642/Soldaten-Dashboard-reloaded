@@ -36,7 +36,29 @@ data class Palette(
     val neutral: Color,
     val punktSchrift: Boolean,
     val punktRaster: Boolean,
+    /** Hoher Kontrast: Karten heller abgesetzt, kräftigere Ränder. */
+    val kontrast: Boolean = false,
 )
+
+/** Kontrastreichere Variante: Bereiche (Karten) und Einträge klar voneinander abgesetzt. */
+private fun Palette.mitKontrast(thema: String): Palette = when (thema) {
+    "nothing-light" -> copy(
+        bg = Color(0xFFE9E9E9), panel = Color(0xFFFFFFFF), panelAlt = Color(0xFFF3F3F3),
+        rand = Color(0xFFB0B0B0), randLeise = Color(0xFFCCCCCC), textFaint = Color(0xFF6E6E6E), kontrast = true,
+    )
+    "graphit" -> copy(
+        panel = Color(0xFF262A31), panelAlt = Color(0xFF1A1D22), rand = Color(0xFF4A505B), randLeise = Color(0xFF383D46),
+        textFaint = Color(0xFF8A909B), kontrast = true,
+    )
+    "aulumu" -> copy(
+        panel = Color(0xFF202125), panelAlt = Color(0xFF131417), rand = Color(0xFF48494E), randLeise = Color(0xFF34353A),
+        textFaint = Color(0xFF8E8D89), kontrast = true,
+    )
+    else -> copy(
+        panel = Color(0xFF1A1A1A), panelAlt = Color(0xFF0A0A0A), rand = Color(0xFF4A4A4A), randLeise = Color(0xFF353535),
+        textFaint = Color(0xFF878787), kontrast = true,
+    )
+}
 
 data class Thema(val id: String, val name: String, val beschreibung: String)
 
@@ -65,7 +87,7 @@ fun palette(design: Design, systemDunkel: Boolean): Palette {
     val akz = AKZENTE.firstOrNull { it.id == design.akzent } ?: AKZENTE[0]
     val ps = design.punktSchrift
     val pr = design.punktRaster
-    return when (thema) {
+    val basis = when (thema) {
         "nothing-light" -> Palette(
             true, Color(0xFFFFFFFF), Color(0xFFF6F6F6), Color(0xFFEFEFEF), Color(0xFFD0D0D0), Color(0xFFE4E4E4),
             Color(0xFF000000), Color(0xFF545454), Color(0xFF8A8A8A), akz.hell, akz.hell.copy(alpha = 0.12f),
@@ -93,6 +115,7 @@ fun palette(design: Design, systemDunkel: Boolean): Palette {
             Color(0xFFB4B4B4), ps, pr
         )
     }
+    return if (design.kontrast) basis.mitKontrast(thema) else basis
 }
 
 val LocalPalette = staticCompositionLocalOf { palette(Design(), true) }
