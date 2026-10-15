@@ -132,7 +132,7 @@ fun UrlaubSeite() {
                     Row {
                         DatumFeld(uVon, { uVon = it }, "Startdatum *", Modifier.weight(1f))
                         Spacer(Modifier.width(8.dp))
-                        DatumFeld(uBis, { uBis = it }, "Enddatum", Modifier.weight(1f))
+                        DatumFeld(uBis, { uBis = it }, "Enddatum", Modifier.weight(1f), startHinweis = uVon)
                     }
                     Feld(uNotiz, { uNotiz = it }, "Notiz")
                     val v = parseDE(uVon)

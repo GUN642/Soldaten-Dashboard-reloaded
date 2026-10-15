@@ -478,7 +478,11 @@ fun ZeitFeld(wert: String, onWert: (String) -> Unit, label: String, modifier: Mo
 /** Datum TT.MM.JJJJ mit automatischen Punkten und Kalenderauswahl. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DatumFeld(wert: String, onWert: (String) -> Unit, label: String, modifier: Modifier = Modifier) {
+fun DatumFeld(
+    wert: String, onWert: (String) -> Unit, label: String, modifier: Modifier = Modifier,
+    /** Bei leerem Feld öffnet die Kalenderauswahl auf diesem Datum (z. B. Enddatum ab Startdatum). */
+    startHinweis: String? = null,
+) {
     var zeigen by remember { mutableStateOf(false) }
     var hatteFokus by remember { mutableStateOf(false) }
     var feld by remember { mutableStateOf(TextFieldValue(wert, TextRange(wert.length))) }
@@ -516,7 +520,7 @@ fun DatumFeld(wert: String, onWert: (String) -> Unit, label: String, modifier: M
         FeldSymbol(Icons.Outlined.CalendarMonth, "Kalender") { zeigen = true }
     }
     if (zeigen) {
-        val start = parseDE(wert) ?: LocalDate.now()
+        val start = parseDE(wert) ?: parseDE(startHinweis) ?: LocalDate.now()
         val zustand = rememberDatePickerState(initialSelectedDateMillis = start.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
         val p = LocalPalette.current
         DatePickerDialog(

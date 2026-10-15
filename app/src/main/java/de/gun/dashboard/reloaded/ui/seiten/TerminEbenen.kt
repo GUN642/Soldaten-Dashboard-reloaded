@@ -392,7 +392,7 @@ fun TerminMaskeEbene(start: MaskeStart) {
             Row {
                 DatumFeld(von, { von = it }, "Startdatum *", Modifier.weight(1f))
                 Spacer(Modifier.width(8.dp))
-                DatumFeld(bis, { bis = it }, "Enddatum", Modifier.weight(1f))
+                DatumFeld(bis, { bis = it }, "Enddatum", Modifier.weight(1f), startHinweis = von)
             }
             if (!ganztags) Row {
                 ZeitFeld(zeitVon, { zeitVon = it }, "Uhrzeit von", Modifier.weight(1f))

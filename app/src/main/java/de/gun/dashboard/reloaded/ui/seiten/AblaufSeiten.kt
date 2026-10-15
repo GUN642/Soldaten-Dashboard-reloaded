@@ -175,7 +175,7 @@ fun LehrgaengeSeite() {
                     Feld(art, { art = it }, "Art *", platzhalter = "z. B. Erste Hilfe")
                     DatumFeld(von, { von = it }, "Gültig von (optional)")
                     DauerRechner(von, wert, { wert = it }, einheit, { einheit = it }) { bis = it }
-                    DatumFeld(bis, { bis = it }, "Gültig bis *")
+                    DatumFeld(bis, { bis = it }, "Gültig bis *", startHinweis = von)
                     Feld(notiz, { notiz = it }, "Notiz")
                     FormKnoepfe(if (bearbeitet != null) "Änderungen speichern" else "+ Eintrag hinzufügen", {
                         if (art.isBlank()) { st.melden("Eintrag", "Bitte eine Art eintragen."); return@FormKnoepfe }
@@ -255,7 +255,7 @@ fun DokumenteSeite() {
                     Feld(nummer, { nummer = it }, "Dokumentnummer (optional)")
                     DatumFeld(von, { von = it }, "Gültig von (optional)")
                     DauerRechner(von, wert, { wert = it }, einheit, { einheit = it }) { bis = it }
-                    DatumFeld(bis, { bis = it }, "Gültig bis *")
+                    DatumFeld(bis, { bis = it }, "Gültig bis *", startHinweis = von)
                     Feld(notiz, { notiz = it }, "Notiz", platzhalter = "z. B. ausstellende Behörde")
                     Etikett("Kopie hinterlegen (optional)")
                     AnhangBereich(dateien, { l -> neu = neu + l.filter { it !in dateien }; dateien = l }, nurBilderUndPdf = true)

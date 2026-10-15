@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.5.6" to listOf(
+        "Enddatum: Die Kalenderauswahl öffnet beim Startdatum statt bei heute (Termine, Urlaub, Abwesenheiten, „Gültig bis“).",
+    ),
     "1.5.5" to listOf(
         "Neu: „Hoher Kontrast“ (Menü › Design, standardmäßig an) – Bereiche heben sich deutlich vom Hintergrund ab, kräftigere Ränder, Einträge innerhalb der Bereiche klar abgesetzt. In allen Themen.",
     ),

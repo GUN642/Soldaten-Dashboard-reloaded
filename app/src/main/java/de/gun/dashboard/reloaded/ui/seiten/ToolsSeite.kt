@@ -457,7 +457,7 @@ private fun AvzKarte() {
             Row {
                 DatumFeld(e.von, { e = e.copy(von = it) }, "Von *", Modifier.weight(1f))
                 Spacer(Modifier.width(8.dp))
-                DatumFeld(e.bis, { e = e.copy(bis = it) }, "Bis *", Modifier.weight(1f))
+                DatumFeld(e.bis, { e = e.copy(bis = it) }, "Bis *", Modifier.weight(1f), startHinweis = e.von)
             }
             Feld(e.einsatz, { e = e.copy(einsatz = it) }, "Einsatzgebiet", platzhalter = "z. B. Litauen")
             Row {
