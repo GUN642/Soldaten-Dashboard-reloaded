@@ -25,7 +25,11 @@ class App : Application() {
         de.gun.dashboard.reloaded.erinnerung.Unwetter.planen(this)
         de.gun.dashboard.reloaded.erinnerung.Tagesueberblick.kanalAnlegen(this)
         try { de.gun.dashboard.reloaded.erinnerung.Tagesueberblick.planen(this) } catch (e: Exception) { }
-        Speicher.beiAenderung = { Aktualisierung.nachAenderung(this) }
+        de.gun.dashboard.reloaded.logik.Zeitzonen.modus = Speicher.aktuell.kalender.zeitAnzeige
+        Speicher.beiAenderung = {
+            de.gun.dashboard.reloaded.logik.Zeitzonen.modus = Speicher.aktuell.kalender.zeitAnzeige
+            Aktualisierung.nachAenderung(this)
+        }
         // Abonnierte Kalender: täglich im Hintergrund, beim Start nachholen falls heute noch nicht geschehen
         de.gun.dashboard.reloaded.netz.AboAktualisierung.planen(this)
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO).launch {

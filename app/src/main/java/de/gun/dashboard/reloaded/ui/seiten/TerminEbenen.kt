@@ -1,5 +1,6 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import de.gun.dashboard.reloaded.logik.Zeitzonen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -151,6 +152,16 @@ fun TerminDetailEbene(t: Termin) {
             Abstand()
             DetailZeile("Zeit", zeitText(t))
             if (!t.istTodo) DetailZeile("Dauer", terminDauer(t, d.feiertagsLand.land))
+            // Termin in anderer Zeitzone: Ortszeit dort zusätzlich anzeigen
+            t.zone?.takeIf { !t.ganztags }?.let { id ->
+                val tz = Zeitzonen.zoneOder(id, Zeitzonen.anzeige)
+                if (!Zeitzonen.gleicheUhrzeit(tz, Zeitzonen.anzeige)) {
+                    val a = Zeitzonen.umrechnen(t.start, Zeitzonen.anzeige, tz)
+                    val b = t.ende?.let { Zeitzonen.umrechnen(it, Zeitzonen.anzeige, tz) }
+                    DetailZeile("Zeitzone", Zeitzonen.name(id) + " (" + Zeitzonen.versatz(tz) + ") · dort " + a.hhmm() + (b?.let { "–" + it.hhmm() } ?: "") +
+                        (if (a.toLocalDate() != t.start.toLocalDate()) " am " + a.toLocalDate().alsDE() else ""))
+                }
+            }
             if (t.ort.isNotBlank()) DetailZeile("Ort", t.ort)
             DetailZeile("Kalender", t.quelleName)
             if (t.istSerie) DetailZeile("Wiederholung", regelZuWdh(t.rrule)?.let { WDH_NAMEN[it] } ?: "Serie")
@@ -235,10 +246,28 @@ fun TerminMaskeEbene(start: MaskeStart) {
     // Anfangswerte
     var titel by remember { mutableStateOf(t?.titel ?: "") }
     var ganztags by remember { mutableStateOf(t?.ganztags ?: false) }
-    var von by remember { mutableStateOf((t?.ersterTag ?: start.datum ?: LocalDate.now()).alsDE()) }
-    var bis by remember { mutableStateOf(t?.let { if (it.letzterTag != it.ersterTag) it.letzterTag.alsDE() else "" } ?: "") }
-    var zeitVon by remember { mutableStateOf(t?.takeIf { !it.ganztags }?.start?.hhmm() ?: start.uhrzeit?.hhmm() ?: "08:00") }
-    var zeitBis by remember { mutableStateOf(t?.takeIf { !it.ganztags }?.ende?.hhmm() ?: start.uhrzeit?.let { (if (it.hour >= 23) java.time.LocalTime.of(23, 59) else it.plusHours(1)).hhmm() } ?: "16:00") }
+    // Zeitzone des Termins (Standard: Deutschland); Uhrzeiten in der Maske gelten in dieser Zone
+    var zone by remember { mutableStateOf(t?.takeIf { !it.ganztags }?.zone?.takeIf { it.isNotBlank() } ?: Zeitzonen.DEUTSCHLAND.id) }
+    val anfangsZone = remember { Zeitzonen.zoneOder(zone) }
+    // Angezeigte Zeiten (Anzeigezone) in die Zone des Termins umrechnen
+    val startIn = remember {
+        t?.takeIf { !it.ganztags }?.start?.let { Zeitzonen.umrechnen(it, Zeitzonen.anzeige, anfangsZone) }
+            ?: start.uhrzeit?.let { Zeitzonen.umrechnen((start.datum ?: LocalDate.now()).atTime(it), Zeitzonen.anzeige, anfangsZone) }
+    }
+    val endeIn = remember {
+        t?.takeIf { !it.ganztags }?.ende?.let { Zeitzonen.umrechnen(it, Zeitzonen.anzeige, anfangsZone) }
+            ?: startIn?.takeIf { t == null }?.let { if (it.hour >= 23) it.withHour(23).withMinute(59) else it.plusHours(1) }
+    }
+    var von by remember { mutableStateOf((startIn?.toLocalDate() ?: t?.ersterTag ?: start.datum ?: LocalDate.now()).alsDE()) }
+    var bis by remember {
+        mutableStateOf(
+            if (t != null && !t.ganztags && startIn != null && endeIn != null) {
+                if (endeIn.toLocalDate() != startIn.toLocalDate()) endeIn.toLocalDate().alsDE() else ""
+            } else t?.let { if (it.letzterTag != it.ersterTag) it.letzterTag.alsDE() else "" } ?: ""
+        )
+    }
+    var zeitVon by remember { mutableStateOf(startIn?.hhmm() ?: "08:00") }
+    var zeitBis by remember { mutableStateOf(endeIn?.hhmm() ?: "16:00") }
     var ort by remember { mutableStateOf(t?.ort ?: "") }
     var notiz by remember { mutableStateOf(t?.notiz?.ifBlank { eigener?.notiz ?: "" } ?: "") }
     var anhaenge by remember { mutableStateOf(eigener?.anhaenge ?: emptyList()) }
@@ -298,7 +327,7 @@ fun TerminMaskeEbene(start: MaskeStart) {
                 if (t?.eventId != null && t.istSerie && s == t.ersterTag) {
                     GeraeteKalender.ursprungLesen(ctx, t.eventId)?.let { ms ->
                         val ur = if (t.ganztags) Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()
-                        else Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDate()
+                        else Instant.ofEpochMilli(ms).atZone(Zeitzonen.anzeige).toLocalDate()
                         val laenge = ChronoUnit.DAYS.between(s, e)
                         sDat = ur; eDat = ur.plusDays(laenge)
                     }
@@ -312,6 +341,7 @@ fun TerminMaskeEbene(start: MaskeStart) {
                     if (ganztags) sDat.atStartOfDay() else sDat.atTime(zeitAus(zv)!!),
                     if (ganztags) eDat.atStartOfDay() else eDat.atTime(zeitAus(zb)!!),
                     regel ?: "",
+                    if (ganztags) null else zone,
                 )
                 val wdhWert = if (wdh == "__behalten") (regelZuWdh(regel) ?: "") else wdh
 
@@ -334,7 +364,7 @@ fun TerminMaskeEbene(start: MaskeStart) {
                             a.copy(kalender = a.kalender.copy(eigene = a.kalender.eigene.map {
                                 if (it.id == eigener.id) it.copy(
                                     titel = titel.trim(), von = s.alsDE(), bis = e.alsDE(), ganztags = ganztags, zeitVon = zv, zeitBis = zb,
-                                    ort = ort.trim(), notiz = notiz.trim(), anhaenge = anhaenge, wiederholung = wdhWert,
+                                    ort = ort.trim(), notiz = notiz.trim(), anhaenge = anhaenge, wiederholung = wdhWert, zeitzone = zone,
                                     kalenderId = kalId, sequence = (it.sequence ?: 0) + 1, nativId = nativNeu ?: it.nativId,
                                 ) else it
                             }))
@@ -347,6 +377,7 @@ fun TerminMaskeEbene(start: MaskeStart) {
                             id = neueId(), uid = neueId() + "@dienst-cockpit", erstellt = heuteDE(), titel = titel.trim(), von = s.alsDE(),
                             bis = e.alsDE(), ganztags = ganztags, zeitVon = zv, zeitBis = zb, ort = ort.trim(), notiz = notiz.trim(),
                             anhaenge = anhaenge, kalenderId = kalId, wiederholung = wdhWert, nativId = nativNeu ?: t.eventId.toString(), nativ = true,
+                            zeitzone = zone,
                         ))) }
                     }
                 } else {
@@ -359,7 +390,7 @@ fun TerminMaskeEbene(start: MaskeStart) {
                         id = neueId(), uid = neueId() + "@dienst-cockpit", sequence = 0, erstellt = heuteDE(), titel = titel.trim(),
                         von = s.alsDE(), bis = e.alsDE(), ganztags = ganztags, zeitVon = zv, zeitBis = zb, ort = ort.trim(),
                         notiz = notiz.trim(), anhaenge = anhaenge, kalenderId = kalId, wiederholung = wdhWert,
-                        nativId = nativId, nativ = nativId.isNotBlank(),
+                        nativId = nativId, nativ = nativId.isNotBlank(), zeitzone = zone,
                     )
                     Speicher.aendern { a ->
                         anrechnen(a.copy(kalender = a.kalender.copy(eigene = a.kalender.eigene + neu)), neu, anrechnung, nurGeplant) { st.melden("Anrechnung", it) }
@@ -399,6 +430,7 @@ fun TerminMaskeEbene(start: MaskeStart) {
                 Spacer(Modifier.width(8.dp))
                 ZeitFeld(zeitBis, { zeitBis = it }, "Uhrzeit bis", Modifier.weight(1f))
             }
+            if (!ganztags) ZeitzonenWahl(zone, { zone = it }, von, bis, zeitVon, zeitBis)
             Feld(ort, { ort = it }, "Ort (optional)")
             Auswahl(
                 "Wiederholung",
@@ -463,6 +495,7 @@ suspend fun erneutEintragen(ctx: android.content.Context, e: EigenerTermin, kalI
         if (e.ganztags) s.atStartOfDay() else s.atTime(zeitAus(e.zeitVon) ?: java.time.LocalTime.of(8, 0)),
         if (e.ganztags) bis.atStartOfDay() else bis.atTime(zeitAus(e.zeitBis) ?: java.time.LocalTime.of(16, 0)),
         wdhZuRegel(e.wiederholung),
+        if (e.ganztags) null else e.zeitzone.ifBlank { Zeitzonen.DEUTSCHLAND.id },
     )
     val id = GeraeteKalender.anlegen(ctx, kalId, felder)
     Speicher.aendern { a ->
@@ -548,4 +581,37 @@ private fun FehltImGeraet(e: EigenerTermin, fertig: () -> Unit) {
         }
     }
     Abstand()
+}
+
+
+/** Auswahl der Zeitzone für die Uhrzeiten eines Termins, mit Umrechnung in die Anzeigezeit. */
+@Composable
+private fun ZeitzonenWahl(zone: String, onZone: (String) -> Unit, von: String, bis: String, zeitVon: String, zeitBis: String) {
+    val p = LocalPalette.current
+    val optionen = remember(zone) {
+        val liste = Zeitzonen.AUSWAHL.map { (id, name) -> id to name + "  (" + Zeitzonen.versatz(java.time.ZoneId.of(id)) + ")" }.toMutableList()
+        val geraet = java.time.ZoneId.systemDefault().id
+        if (liste.none { it.first == geraet }) liste.add(1, geraet to "Gerät: " + Zeitzonen.name(geraet) + "  (" + Zeitzonen.versatz(java.time.ZoneId.systemDefault()) + ")")
+        if (liste.none { it.first == zone }) liste.add(0, zone to Zeitzonen.name(zone) + "  (" + Zeitzonen.versatz(Zeitzonen.zoneOder(zone)) + ")")
+        liste
+    }
+    Auswahl("Zeitzone der Uhrzeiten", optionen, zone, onWert = onZone)
+    // Hinweis: entsprechende Zeit in der Anzeigezone
+    val tz = Zeitzonen.zoneOder(zone)
+    val anzeige = Zeitzonen.anzeige
+    if (!Zeitzonen.gleicheUhrzeit(tz, anzeige)) {
+        val s = parseDE(von)
+        val a = s?.let { d -> zeitAus(zeitVon)?.let { d.atTime(it) } }
+        val b = (parseDE(bis) ?: s)?.let { d -> zeitAus(zeitBis)?.let { d.atTime(it) } }
+        if (a != null) {
+            val aa = Zeitzonen.umrechnen(a, tz, anzeige)
+            val bb = b?.let { Zeitzonen.umrechnen(it, tz, anzeige) }
+            Fliesstext(
+                "= " + aa.hhmm() + (bb?.let { "–" + it.hhmm() } ?: "") +
+                    (if (aa.toLocalDate() != a.toLocalDate()) " am " + aa.toLocalDate().alsDE() else "") +
+                    " " + (if (Zeitzonen.modus == "lokal") "Ortszeit (Gerät)" else "deutsche Zeit"),
+                p.akzent, 12.sp
+            )
+        }
+    }
 }

@@ -266,6 +266,11 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.6.0" to listOf(
+        "Neu: Zeitzone pro Termin – beim Anlegen wählbar (Standard: Deutschland), mit Umrechnung in die angezeigte Zeit.",
+        "Neu: Kalender-Einstellungen › Anzeige: Uhrzeiten immer in Deutschlandzeit oder in der Ortszeit des Geräts.",
+        "Termindetails zeigen bei abweichender Zeitzone zusätzlich die Ortszeit dort.",
+    ),
     "1.5.6" to listOf(
         "Enddatum: Die Kalenderauswahl öffnet beim Startdatum statt bei heute (Termine, Urlaub, Abwesenheiten, „Gültig bis“).",
     ),

@@ -167,9 +167,9 @@ private fun WochenSeite(ws: LocalDate, daten: WochenDaten?, b: TerminBestand) {
     val st = LocalSteuerung.current
     val haptik = LocalHapticFeedback.current
     val dichte = LocalDensity.current
-    val heute = LocalDate.now()
-    var jetzt by remember { mutableStateOf(LocalTime.now()) }
-    LaunchedEffect(Unit) { while (true) { delay(60_000); jetzt = LocalTime.now() } }
+    val heute = LocalDate.now(de.gun.dashboard.reloaded.logik.Zeitzonen.anzeige)
+    var jetzt by remember { mutableStateOf(LocalTime.now(de.gun.dashboard.reloaded.logik.Zeitzonen.anzeige)) }
+    LaunchedEffect(Unit) { while (true) { delay(60_000); jetzt = LocalTime.now(de.gun.dashboard.reloaded.logik.Zeitzonen.anzeige) } }
     // Startposition: zwei Stunden vor jetzt bzw. 7 Uhr
     val startStunde = if (!heute.isBefore(ws) && !heute.isAfter(ws.plusDays(6))) (jetzt.hour - 2).coerceIn(0, 16) else 7
     val scroll = rememberScrollState(with(dichte) { (STUNDE * startStunde).roundToPx() })

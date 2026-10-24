@@ -106,8 +106,8 @@ fun HeuteSeite() {
     val st = LocalSteuerung.current
     val b = rememberBestand()
     val d = b.daten
-    var jetzt by remember { mutableStateOf(LocalDateTime.now()) }
-    LaunchedEffect(Unit) { while (true) { delay(30_000); jetzt = LocalDateTime.now() } }
+    var jetzt by remember { mutableStateOf(LocalDateTime.now(de.gun.dashboard.reloaded.logik.Zeitzonen.anzeige)) }
+    LaunchedEffect(Unit) { while (true) { delay(30_000); jetzt = LocalDateTime.now(de.gun.dashboard.reloaded.logik.Zeitzonen.anzeige) } }
     val heute = jetzt.toLocalDate()
     val termine = remember(b, heute) { termineAm(b, heute, false) }
     val urlaub = remember(d) { urlaubStand(d) }
@@ -154,7 +154,7 @@ fun HeuteSeite() {
 }
 
 @Composable
-fun TerminZeile(t: Termin, jetzt: LocalDateTime = LocalDateTime.now(), mitDatum: Boolean = false, onClick: () -> Unit) {
+fun TerminZeile(t: Termin, jetzt: LocalDateTime = LocalDateTime.now(de.gun.dashboard.reloaded.logik.Zeitzonen.anzeige), mitDatum: Boolean = false, onClick: () -> Unit) {
     val p = LocalPalette.current
     val laeuft = !t.ganztags && !t.start.isAfter(jetzt) && !(t.ende ?: t.start).isBefore(jetzt)
     Zeile(Color(t.farbe), onClick = onClick) {

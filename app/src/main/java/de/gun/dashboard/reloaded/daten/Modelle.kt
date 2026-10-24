@@ -201,6 +201,8 @@ data class EigenerTermin(
     val wiederholung: FText = "",
     val nativId: FText = "",
     val nativ: FBool = false,
+    /** Zeitzone der Uhrzeiten; leer = Deutschland. */
+    val zeitzone: FText = "",
 )
 
 @Serializable
@@ -214,6 +216,8 @@ data class Kalender(
     val erledigteImKalender: Boolean = false,
     /** Ansicht im Kalender: monat, woche oder agenda. */
     val ansicht: String = "monat",
+    /** Uhrzeiten anzeigen in "deutschland" (Europe/Berlin) oder "lokal" (Ortszeit des Geräts). */
+    val zeitAnzeige: String = "deutschland",
 )
 
 // ---------------- Heute / Wetter ----------------

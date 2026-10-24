@@ -30,6 +30,8 @@ data class Termin(
     val schreibbar: Boolean = false,
     /** Eigener Termin, dessen Eintrag im Gerätekalender verschwunden ist (z. B. von Outlook beim Abgleich entfernt). */
     val fehltImGeraet: Boolean = false,
+    /** Zeitzone, in der der Termin angelegt ist (null = unbekannt bzw. ganztägig). */
+    val zone: String? = null,
 ) {
     val ersterTag: LocalDate get() = start.toLocalDate()
 
@@ -112,7 +114,7 @@ fun terminFenster(b: TerminBestand, von: LocalDate, bis: LocalDate, mitAufgaben:
             quelleId = k.id, quelleName = k.titel + (if (k.dienst.isNotBlank()) " · " + k.dienst else ""),
             farbe = kalenderFarbe(b, k.id, k.farbe), titel = e.titel, uid = "g:" + e.eventId + ":" + e.rohBeginn,
             ort = e.ort, notiz = e.notiz, start = e.start, ende = e.ende, ganztags = e.ganztags,
-            rrule = e.rrule, eventId = e.eventId, rohBeginn = e.rohBeginn, schreibbar = k.schreibbar,
+            rrule = e.rrule, eventId = e.eventId, rohBeginn = e.rohBeginn, schreibbar = k.schreibbar, zone = e.zone,
         ).let { t ->
             // Zusatzangaben eines selbst angelegten Termins (Notiz, Anhänge)
             val eigen = d.kalender.eigene.firstOrNull { it.nativId.isNotBlank() && it.nativId == e.eventId.toString() }
@@ -149,10 +151,12 @@ fun terminFenster(b: TerminBestand, von: LocalDate, bis: LocalDate, mitAufgaben:
         val e = parseDE(t.bis) ?: s
         val (a, z) = if (t.ganztags) s.atStartOfDay() to e.plusDays(1).atStartOfDay()
         else {
-            val a = s.atTime(zeitAus(t.zeitVon) ?: LocalTime.of(8, 0))
-            var z = e.atTime(zeitAus(t.zeitBis) ?: LocalTime.of(16, 0))
-            if (!z.isAfter(a)) z = a.plusHours(1)
-            a to z
+            // Uhrzeiten in der Zone des Termins, angezeigt in der Anzeigezone
+            val tz = Zeitzonen.zoneOder(t.zeitzone)
+            val a0 = s.atTime(zeitAus(t.zeitVon) ?: LocalTime.of(8, 0))
+            var z0 = e.atTime(zeitAus(t.zeitBis) ?: LocalTime.of(16, 0))
+            if (!z0.isAfter(a0)) z0 = a0.plusHours(1)
+            Zeitzonen.umrechnen(a0, tz, Zeitzonen.anzeige) to Zeitzonen.umrechnen(z0, tz, Zeitzonen.anzeige)
         }
         val regel = wdhZuRegel(t.wiederholung).ifBlank { null }
         for (vk in expandiere(a, z, t.ganztags, regel, vonZ, bisZ)) {
@@ -161,6 +165,7 @@ fun terminFenster(b: TerminBestand, von: LocalDate, bis: LocalDate, mitAufgaben:
                 farbe = FARBE_EIGENE, titel = t.titel,
                 uid = "e:" + t.id + ":" + vk.start, ort = t.ort, notiz = t.notiz, start = vk.start, ende = vk.ende,
                 ganztags = t.ganztags, rrule = regel, eigenerId = t.id, fehltImGeraet = fehlt,
+                zone = if (t.ganztags) null else t.zeitzone.ifBlank { Zeitzonen.DEUTSCHLAND.id },
             )
         }
     }

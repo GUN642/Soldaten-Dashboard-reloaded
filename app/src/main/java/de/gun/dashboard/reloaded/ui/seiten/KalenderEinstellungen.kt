@@ -45,6 +45,7 @@ import de.gun.dashboard.reloaded.logik.heuteDE
 import de.gun.dashboard.reloaded.logik.icsLesen
 import de.gun.dashboard.reloaded.logik.icsSchreiben
 import de.gun.dashboard.reloaded.logik.zahl
+import de.gun.dashboard.reloaded.logik.Zeitzonen
 import de.gun.dashboard.reloaded.netz.FerienDienst
 import de.gun.dashboard.reloaded.netz.Netz
 import de.gun.dashboard.reloaded.ui.Abstand
@@ -204,6 +205,20 @@ fun KalenderEinstellungen() {
         item { QuellenKarte { loeschQuelle = it } }
         item {
             Karte("Anzeige", "03") {
+                Etikett("Uhrzeiten anzeigen in")
+                Segmente(listOf("deutschland" to "Deutschlandzeit", "lokal" to "Ortszeit (Gerät)"), d.kalender.zeitAnzeige) { m ->
+                    Zeitzonen.modus = m
+                    Speicher.aendern { it.copy(kalender = it.kalender.copy(zeitAnzeige = m)) }
+                    scope.launch { Aktualisierung.geraetLadenJetzt(ctx) }
+                }
+                val geraetZone = java.time.ZoneId.systemDefault()
+                Fliesstext(
+                    if (d.kalender.zeitAnzeige == "lokal") "Alle Termine in der Zeit des Geräts: " + Zeitzonen.name(geraetZone.id) + " (" + Zeitzonen.versatz(geraetZone) + ")."
+                    else "Alle Termine in deutscher Zeit (" + Zeitzonen.versatz(Zeitzonen.DEUTSCHLAND) + "), auch im Auslandseinsatz." +
+                        (if (!Zeitzonen.gleicheUhrzeit(geraetZone, Zeitzonen.DEUTSCHLAND)) " Gerät steht auf " + Zeitzonen.name(geraetZone.id) + " (" + Zeitzonen.versatz(geraetZone) + ")." else ""),
+                    p.textDim, 12.sp
+                )
+                Abstand(10.dp)
                 Etikett("Schriftgröße im Kalender: ${d.kalender.schriftgroesse ?: 100} %")
                 var wert by remember { mutableStateOf((d.kalender.schriftgroesse ?: 100).toFloat()) }
                 Regler(wert, 70f..150f, 15, { wert = it }) {

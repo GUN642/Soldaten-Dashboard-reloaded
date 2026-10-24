@@ -138,7 +138,7 @@ private fun untilLesen(u: String): LocalDateTime? {
         when {
             Regex("""^\d{8}$""").matches(t) -> LocalDate.parse(t, DateTimeFormatter.BASIC_ISO_DATE).atTime(23, 59, 59)
             t.endsWith("Z") -> LocalDateTime.parse(t.dropLast(1), DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"))
-                .atZone(ZoneOffset.UTC).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime()
+                .atZone(ZoneOffset.UTC).withZoneSameInstant(Zeitzonen.anzeige).toLocalDateTime()
             else -> LocalDateTime.parse(t, DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"))
         }
     } catch (e: Exception) {
@@ -166,9 +166,9 @@ private fun icsZeitLesen(wert: String, params: String): IcsZeit? {
             val basis = LocalDateTime.parse(w.removeSuffix("Z").take(15), DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"))
             val tzid = Regex("TZID=([^;:]+)", RegexOption.IGNORE_CASE).find(params)?.groupValues?.get(1)?.trim('"')
             val lokal = when {
-                w.endsWith("Z") -> basis.atZone(ZoneOffset.UTC).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime()
+                w.endsWith("Z") -> basis.atZone(ZoneOffset.UTC).withZoneSameInstant(Zeitzonen.anzeige).toLocalDateTime()
                 tzid != null -> runCatching {
-                    basis.atZone(ZoneId.of(tzid)).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime()
+                    basis.atZone(ZoneId.of(tzid)).withZoneSameInstant(Zeitzonen.anzeige).toLocalDateTime()
                 }.getOrDefault(basis)
                 else -> basis
             }
@@ -179,11 +179,11 @@ private fun icsZeitLesen(wert: String, params: String): IcsZeit? {
     }
 }
 
-fun LocalDateTime.alsIso(): String = atZone(ZoneId.systemDefault()).toInstant().toString()
+fun LocalDateTime.alsIso(): String = atZone(Zeitzonen.anzeige).toInstant().toString()
 
 fun isoZuLokal(iso: String?): LocalDateTime? = try {
     if (iso.isNullOrBlank()) null
-    else Instant.parse(iso).atZone(ZoneId.systemDefault()).toLocalDateTime()
+    else Instant.parse(iso).atZone(Zeitzonen.anzeige).toLocalDateTime()
 } catch (e: Exception) {
     try { LocalDateTime.parse(iso) } catch (e2: Exception) { null }
 }
@@ -262,7 +262,6 @@ private val ICS_ZEIT = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmm'00'")
 fun icsSchreiben(termine: List<EigenerTermin>): String {
     val z = mutableListOf("BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Soldaten Dashboard Reloaded//DE",
         "CALSCALE:GREGORIAN", "METHOD:PUBLISH")
-    val zone = ZoneId.systemDefault()
     val stempel = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"))
     for (t in termine) {
         val s = parseDE(t.von) ?: continue
@@ -278,8 +277,8 @@ fun icsSchreiben(termine: List<EigenerTermin>): String {
             val a = s.atTime(zeitAus(t.zeitVon) ?: LocalTime.of(8, 0))
             var b = e.atTime(zeitAus(t.zeitBis) ?: LocalTime.of(16, 0))
             if (!b.isAfter(a)) b = a.plusHours(1)
-            z += "DTSTART;TZID=${zone.id}:" + a.format(ICS_ZEIT)
-            z += "DTEND;TZID=${zone.id}:" + b.format(ICS_ZEIT)
+            z += "DTSTART;TZID=${Zeitzonen.zoneOder(t.zeitzone).id}:" + a.format(ICS_ZEIT)
+            z += "DTEND;TZID=${Zeitzonen.zoneOder(t.zeitzone).id}:" + b.format(ICS_ZEIT)
         }
         wdhZuRegel(t.wiederholung).takeIf { it.isNotEmpty() }?.let { z += "RRULE:$it" }
         z += "SUMMARY:" + icsEscape(t.titel)

@@ -155,6 +155,26 @@ class LogikTest {
         // Ohne eingelesene Kalender: keine Aussage, nichts als fehlend markiert
         assertTrue(fehlendeEigeneIds(TerminBestand(d, emptyList(), emptyList(), emptyList())).isEmpty())
     }
+    @Test fun zeitzonen() {
+        val sommer = LocalDate.of(2026, 7, 2).atTime(12, 0).atZone(Zeitzonen.DEUTSCHLAND).toInstant()
+        assertEquals("UTC+2", Zeitzonen.versatz(Zeitzonen.DEUTSCHLAND, sommer))
+        assertEquals("UTC+4:30", Zeitzonen.versatz(ZoneId.of("Asia/Kabul"), sommer))
+        assertEquals("UTC−4", Zeitzonen.versatz(ZoneId.of("America/New_York"), sommer))
+        assertEquals(LocalDateTime.of(2026, 7, 2, 7, 30),
+            Zeitzonen.umrechnen(LocalDateTime.of(2026, 7, 2, 10, 0), ZoneId.of("Asia/Kabul"), Zeitzonen.DEUTSCHLAND))
+        assertEquals(Zeitzonen.DEUTSCHLAND, Zeitzonen.zoneOder("Quatsch/Zone"))
+        // Eigener Termin in Kabuler Zeit erscheint in deutscher Zeit
+        Zeitzonen.modus = "deutschland"
+        val kabul = EigenerTermin(id = "k", titel = "Lage", von = "02.07.2026", zeitVon = "10:00", zeitBis = "11:00", zeitzone = "Asia/Kabul")
+        val ohne = EigenerTermin(id = "o", titel = "Sport", von = "02.07.2026", zeitVon = "15:00", zeitBis = "16:00")
+        val b = TerminBestand(AppDaten(kalender = Kalender(eigene = listOf(kabul, ohne))), emptyList(), emptyList(), emptyList())
+        val t = terminFenster(b, LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 2), false)
+        val k = t.first { it.titel == "Lage" }
+        assertEquals(LocalDateTime.of(2026, 7, 2, 7, 30), k.start)
+        assertEquals(LocalDateTime.of(2026, 7, 2, 8, 30), k.ende)
+        assertEquals("Asia/Kabul", k.zone)
+        assertEquals(LocalDateTime.of(2026, 7, 2, 15, 0), t.first { it.titel == "Sport" }.start)
+    }
     @Test fun uebertragung() {
         assertEquals(3_600_000L, dauerMs("P3600S"))
         assertEquals(5_400_000L, dauerMs("PT1H30M"))

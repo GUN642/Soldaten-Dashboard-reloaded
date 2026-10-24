@@ -24,6 +24,8 @@ data class GeraetTermin(
     /** Beginn des Vorkommens, wie ihn der Kalender führt (für Ausnahmen). */
     val rohBeginn: Long,
     val nachgerechnet: Boolean = false,
+    /** Zeitzone, in der der Termin angelegt ist (nur bei Terminen mit Uhrzeit). */
+    val zone: String? = null,
 )
 
 /** Angaben zum Anlegen/Ändern eines Termins im Gerätekalender. */
@@ -36,6 +38,8 @@ data class TerminFelder(
     /** Bei ganztägig: letzter Tag (einschließlich) um 00:00. */
     val ende: LocalDateTime,
     val rrule: String,
+    /** Zeitzone der Uhrzeiten (z. B. "America/New_York"); null = Anzeigezone. */
+    val zone: String? = null,
 )
 
 

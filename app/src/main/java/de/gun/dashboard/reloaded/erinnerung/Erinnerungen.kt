@@ -135,7 +135,7 @@ object Erinnerungen {
         val ids = mutableSetOf<String>()
         for (e in liste) {
             val id = kennung(e.schluessel)
-            val ms = e.zeit.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val ms = e.zeit.atZone(de.gun.dashboard.reloaded.logik.Zeitzonen.anzeige).toInstant().toEpochMilli()
             am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, ms, absicht(ctx, id, e.titel, e.text, e.ziel, PendingIntent.FLAG_UPDATE_CURRENT))
             ids += id.toString()
         }

@@ -11,6 +11,7 @@ import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
 import de.gun.dashboard.reloaded.logik.expandiere
 import de.gun.dashboard.reloaded.logik.textAusHtml
+import de.gun.dashboard.reloaded.logik.Zeitzonen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -151,8 +152,9 @@ object GeraeteKalender {
         return start.atStartOfDay() to l.plusDays(1).atStartOfDay()
     }
 
+    /** Zeitpunkt als Uhrzeit in der Anzeigezone (Deutschland oder Ortszeit, je nach Einstellung). */
     private fun lokal(ms: Long): LocalDateTime =
-        Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDateTime()
+        Instant.ofEpochMilli(ms).atZone(Zeitzonen.anzeige).toLocalDateTime()
 
     /** Zeiten eines Termins deuten, inkl. Erkennung "ganztägig ohne Kennzeichen". */
     private fun zeiten(beginn: Long, ende: Long?, allDay: Boolean): Triple<LocalDateTime, LocalDateTime?, Boolean> {
@@ -174,7 +176,7 @@ object GeraeteKalender {
     }
 
     private fun termineLesen(ctx: Context, von: LocalDate, bis: LocalDate): List<GeraetTermin> {
-        val zone = ZoneId.systemDefault()
+        val zone = Zeitzonen.anzeige
         val vonMs = von.atStartOfDay(zone).toInstant().toEpochMilli()
         val bisMs = bis.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
         val ergebnis = mutableListOf<GeraetTermin>()
@@ -194,6 +196,7 @@ object GeraeteKalender {
             CalendarContract.Instances.CALENDAR_ID,
             CalendarContract.Instances.RRULE,
             CalendarContract.Instances.STATUS,
+            CalendarContract.Instances.EVENT_TIMEZONE,
         )
         ctx.contentResolver.query(uri, felder, null, null, null)?.use { c ->
             while (c.moveToNext()) {
@@ -214,6 +217,7 @@ object GeraeteKalender {
                         notiz = textAusHtml(c.str(CalendarContract.Instances.DESCRIPTION) ?: ""),
                         rrule = c.str(CalendarContract.Instances.RRULE)?.takeIf { it.isNotBlank() },
                         rohBeginn = beginn,
+                        zone = if (gt) null else c.str(CalendarContract.Instances.EVENT_TIMEZONE),
                     )
                 )
             }
@@ -254,7 +258,7 @@ object GeraeteKalender {
         )?.use { c ->
             while (c.moveToNext()) {
                 val zeit = c.lng(CalendarContract.Events.ORIGINAL_INSTANCE_TIME) ?: continue
-                val tag = Instant.ofEpochMilli(zeit).atZone(ZoneId.systemDefault()).toLocalDate()
+                val tag = Instant.ofEpochMilli(zeit).atZone(Zeitzonen.anzeige).toLocalDate()
                 val tagUtc = Instant.ofEpochMilli(zeit).atZone(ZoneOffset.UTC).toLocalDate()
                 c.str(CalendarContract.Events.ORIGINAL_ID)?.let { ausnahmen += "$it|$tag"; ausnahmen += "$it|$tagUtc" }
                 c.str(CalendarContract.Events.ORIGINAL_SYNC_ID)?.let { ausnahmen += "s:$it|$tag"; ausnahmen += "s:$it|$tagUtc" }
@@ -295,7 +299,7 @@ object GeraeteKalender {
                     val k = "$kalId|$titel|$tag"
                     if (!belegt.add(k)) continue
                     val roh = if (gt) tag.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-                    else vk.start.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    else vk.start.atZone(Zeitzonen.anzeige).toInstant().toEpochMilli()
                     neu.add(
                         GeraetTermin(
                             eventId = id, kalenderId = kalId, titel = titel,
@@ -327,7 +331,8 @@ object GeraeteKalender {
             v.put(CalendarContract.Events.ALL_DAY, 1)
             v.put(CalendarContract.Events.EVENT_TIMEZONE, "UTC")
         } else {
-            val zone = ZoneId.systemDefault()
+            // Uhrzeiten gelten in der gewählten Zeitzone des Termins (Standard: Deutschland)
+            val zone = Zeitzonen.zoneOder(f.zone, Zeitzonen.anzeige)
             startMs = f.start.atZone(zone).toInstant().toEpochMilli()
             var e = f.ende.atZone(zone).toInstant().toEpochMilli()
             if (e <= startMs) e = startMs + 3_600_000
