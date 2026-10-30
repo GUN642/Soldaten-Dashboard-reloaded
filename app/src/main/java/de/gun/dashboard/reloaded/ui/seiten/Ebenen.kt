@@ -266,6 +266,11 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.6.1" to listOf(
+        "Fix: Erinnerungen an Termine kommen jetzt zur richtigen Zeit, wenn der Termin oder das Gerät in einer anderen Zeitzone liegt (Termin 9 Uhr Los Angeles erinnert um 8:45 dort bzw. 16:45 in Deutschland).",
+        "Nach einem Zeitzonenwechsel des Geräts (z. B. nach der Landung) werden die Erinnerungen automatisch neu geplant.",
+        "Der Benachrichtigungstext zeigt bei anderer Zeitzone zusätzlich die Ortszeit des Termins.",
+    ),
     "1.6.0" to listOf(
         "Neu: Zeitzone pro Termin – beim Anlegen wählbar (Standard: Deutschland), mit Umrechnung in die angezeigte Zeit.",
         "Neu: Kalender-Einstellungen › Anzeige: Uhrzeiten immer in Deutschlandzeit oder in der Ortszeit des Geräts.",

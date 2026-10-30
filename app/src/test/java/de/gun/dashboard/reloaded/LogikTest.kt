@@ -175,6 +175,23 @@ class LogikTest {
         assertEquals("Asia/Kabul", k.zone)
         assertEquals(LocalDateTime.of(2026, 7, 2, 15, 0), t.first { it.titel == "Sport" }.start)
     }
+    @Test fun erinnerungZeitzone() {
+        val la = ZoneId.of("America/Los_Angeles")
+        val acht = LocalTime.of(21, 0)
+        // 30.10.2026: Deutschland UTC+1, Los Angeles UTC-7 (8 h Unterschied)
+        val laTermin = EigenerTermin(id = "a", titel = "Meeting", von = "30.10.2026", zeitVon = "09:00", zeitBis = "10:00", zeitzone = "America/Los_Angeles")
+        // Gerät in Los Angeles: 08:45 Ortszeit; Gerät in Deutschland: 16:45
+        assertEquals(LocalDateTime.of(2026, 10, 30, 8, 45), de.gun.dashboard.reloaded.erinnerung.terminErinnerungZeit(laTermin, 15, acht, la))
+        assertEquals(LocalDateTime.of(2026, 10, 30, 16, 45), de.gun.dashboard.reloaded.erinnerung.terminErinnerungZeit(laTermin, 15, acht, Zeitzonen.DEUTSCHLAND))
+        // Termin ohne Zone = deutsche Zeit: 17:00 in Deutschland ist 09:00 in Los Angeles
+        val deTermin = EigenerTermin(id = "b", titel = "Lage", von = "30.10.2026", zeitVon = "17:00", zeitBis = "18:00")
+        assertEquals(LocalDateTime.of(2026, 10, 30, 8, 45), de.gun.dashboard.reloaded.erinnerung.terminErinnerungZeit(deTermin, 15, acht, la))
+        // Ganztägig: Vortag zur eingestellten Ortszeit
+        val gt = EigenerTermin(id = "c", titel = "Urlaub", von = "30.10.2026", ganztags = true)
+        assertEquals(LocalDateTime.of(2026, 10, 29, 21, 0), de.gun.dashboard.reloaded.erinnerung.terminErinnerungZeit(gt, 15, acht, la))
+        assertEquals("17:00 (09:00 " + Zeitzonen.name("America/Los_Angeles") + ")", de.gun.dashboard.reloaded.erinnerung.terminBeginnText(laTermin, Zeitzonen.DEUTSCHLAND))
+        assertEquals("09:00", de.gun.dashboard.reloaded.erinnerung.terminBeginnText(laTermin, la))
+    }
     @Test fun uebertragung() {
         assertEquals(3_600_000L, dauerMs("P3600S"))
         assertEquals(5_400_000L, dauerMs("PT1H30M"))

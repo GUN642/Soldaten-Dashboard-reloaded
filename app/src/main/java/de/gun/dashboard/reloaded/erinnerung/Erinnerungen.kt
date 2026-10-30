@@ -1,5 +1,7 @@
 package de.gun.dashboard.reloaded.erinnerung
 
+import de.gun.dashboard.reloaded.daten.EigenerTermin
+import de.gun.dashboard.reloaded.logik.Zeitzonen
 import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationChannel
@@ -59,14 +61,12 @@ object Erinnerungen {
         val liste = mutableListOf<Erinnerung>()
         val ganztagsZeit = zeitAus(d.ben.ganztagsZeit) ?: LocalTime.of(21, 0)
 
-        // 1) Eigene Termine
+        // 1) Eigene Termine (Uhrzeit gilt in der Zeitzone des Termins, Erinnerung zur Gerätezeit)
         for (t in d.kalender.eigene) {
-            val s = parseDE(t.von) ?: continue
-            val zeit = if (t.ganztags) s.minusDays(1).atTime(ganztagsZeit)
-            else s.atTime(zeitAus(t.zeitVon) ?: LocalTime.of(8, 0)).minusMinutes(d.ben.vorlaufMin.toLong())
+            val zeit = terminErinnerungZeit(t, d.ben.vorlaufMin, ganztagsZeit) ?: continue
             if (zeit.isAfter(jetzt)) liste += Erinnerung(
                 "termin:" + t.id, t.titel,
-                if (t.ganztags) "Morgen ganztägig" else "Beginnt um " + t.zeitVon + if (t.ort.isNotBlank()) " · " + t.ort else "",
+                if (t.ganztags) "Morgen ganztägig" else "Beginnt um " + terminBeginnText(t) + if (t.ort.isNotBlank()) " · " + t.ort else "",
                 zeit, "kalender"
             )
         }
@@ -135,7 +135,8 @@ object Erinnerungen {
         val ids = mutableSetOf<String>()
         for (e in liste) {
             val id = kennung(e.schluessel)
-            val ms = e.zeit.atZone(de.gun.dashboard.reloaded.logik.Zeitzonen.anzeige).toInstant().toEpochMilli()
+            // Erinnerungszeiten sind Uhrzeiten des Geräts (dort, wo man gerade ist)
+            val ms = e.zeit.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
             am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, ms, absicht(ctx, id, e.titel, e.text, e.ziel, PendingIntent.FLAG_UPDATE_CURRENT))
             ids += id.toString()
         }
@@ -178,11 +179,34 @@ class ErinnerungEmpfaenger : BroadcastReceiver() {
     }
 }
 
-/** Nach Neustart oder Update die Erinnerungen neu einplanen. */
+/** Nach Neustart, Update oder Zeitzonenwechsel die Erinnerungen neu einplanen. */
 class NeustartEmpfaenger : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Speicher.init(context)
         try { Erinnerungen.planen(context) } catch (e: Exception) { }
         try { Tagesueberblick.planen(context) } catch (e: Exception) { }
     }
+}
+
+
+/**
+ * Zeitpunkt der Erinnerung an einen eigenen Termin als Uhrzeit des Geräts [geraet].
+ * Zeitgebundene Termine: Beginn in der Zeitzone des Termins (Standard Deutschland) minus Vorlauf.
+ * Ganztägige: am Vortag zur eingestellten Uhrzeit (Ortszeit).
+ */
+fun terminErinnerungZeit(t: EigenerTermin, vorlaufMin: Int, ganztagsZeit: LocalTime, geraet: ZoneId = ZoneId.systemDefault()): LocalDateTime? {
+    val s = parseDE(t.von) ?: return null
+    if (t.ganztags) return s.minusDays(1).atTime(ganztagsZeit)
+    val beginn = s.atTime(zeitAus(t.zeitVon) ?: LocalTime.of(8, 0))
+    return Zeitzonen.umrechnen(beginn, Zeitzonen.zoneOder(t.zeitzone), geraet).minusMinutes(vorlaufMin.toLong())
+}
+
+/** Beginn für den Benachrichtigungstext: in der Anzeigezeit, bei anderer Terminzone zusätzlich die Ortszeit dort. */
+fun terminBeginnText(t: EigenerTermin, anzeige: ZoneId = Zeitzonen.anzeige): String {
+    val s = parseDE(t.von) ?: return t.zeitVon
+    val zone = Zeitzonen.zoneOder(t.zeitzone)
+    val beginn = s.atTime(zeitAus(t.zeitVon) ?: return t.zeitVon)
+    if (Zeitzonen.gleicheUhrzeit(zone, anzeige, beginn.atZone(zone).toInstant())) return t.zeitVon
+    val hier = Zeitzonen.umrechnen(beginn, zone, anzeige)
+    return "%02d:%02d".format(hier.hour, hier.minute) + " (" + t.zeitVon + " " + Zeitzonen.name(zone.id) + ")"
 }
