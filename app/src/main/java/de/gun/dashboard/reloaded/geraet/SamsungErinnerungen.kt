@@ -59,7 +59,7 @@ object SamsungErinnerungen {
         if (provider.isEmpty()) sb.appendLine("Keine Datenquellen (Provider) gemeldet.")
         provider.forEach { pi ->
             sb.appendLine("Provider ${pi.authority}")
-            sb.appendLine("  exportiert: ${if (pi.exported) "ja" else "nein"} · Lesen: ${pi.readPermission ?: pi.permission ?: "frei"}")
+            sb.appendLine("  exportiert: ${if (pi.exported) "ja" else "nein"} · Lesen: ${pi.readPermission ?: "frei"}")
             if (pi.exported) pi.authority.split(";").forEach { a -> versuchen(ctx, a, sb) }
         }
         sb.appendLine()
