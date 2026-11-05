@@ -1,5 +1,20 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import de.gun.dashboard.reloaded.ui.RUND
+import de.gun.dashboard.reloaded.ui.Schrift
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.ui.platform.LocalClipboardManager
+import de.gun.dashboard.reloaded.geraet.SamsungErinnerungen
+import android.os.Build
 import de.gun.dashboard.reloaded.ui.Segmente
 import de.gun.dashboard.reloaded.logik.parseDE
 import de.gun.dashboard.reloaded.logik.fehlendeEigeneIds
@@ -247,6 +262,7 @@ fun KalenderEinstellungen() {
                     "FvD: Stunden je Werktag (ganztägig)", tastatur = KeyboardType.Decimal)
             }
         }
+        if (Build.MANUFACTURER.equals("samsung", true) || SamsungErinnerungen.installiert(ctx)) item { SamsungPruefKarte() }
         if (d.kalender.eigene.isNotEmpty()) item {
             Karte("Eigene Termine", "04") {
                 Fliesstext("${d.kalender.eigene.size} in dieser App angelegte Termine.", p.textDim, 13.sp)
@@ -514,5 +530,49 @@ private fun KalenderUebertragen() {
         }
         if (status.isNotBlank() && !laeuft) Hinweis(status)
         Hinweis("Kopiert wird, was auf dem Gerät liegt. Gleicht Outlook nur einen Teil der Vergangenheit ab, fehlen ältere Termine – die gibt es über den ICS-Export.")
+    }
+}
+
+
+/** Test: Gibt die Samsung-Erinnerungen-App ihre Daten für andere Apps frei? */
+@Composable
+private fun SamsungPruefKarte() {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val zwischenablage = LocalClipboardManager.current
+    var laeuft by remember { mutableStateOf(false) }
+    var ergebnis by remember { mutableStateOf<String?>(null) }
+    fun starten() {
+        laeuft = true
+        scope.launch {
+            ergebnis = withContext(Dispatchers.IO) { runCatching { SamsungErinnerungen.pruefen(ctx) }.getOrElse { "Fehler: " + it.message } }
+            laeuft = false
+        }
+    }
+    val recht = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { starten() }
+    Karte("Samsung Erinnerungen", "test") {
+        Hinweis("Samsung bietet keine offizielle Schnittstelle. Die Prüfung zeigt, ob dein Handy die Erinnerungen trotzdem für andere Apps freigibt. " +
+            "Gelesen werden nur Aufbau und Anzahl, keine Inhalte.")
+        Knopfreihe {
+            Knopf(if (laeuft) "Prüfe …" else "Samsung Erinnerungen prüfen", klein = true) {
+                if (laeuft) return@Knopf
+                if (SamsungErinnerungen.mussAnfragen(ctx)) recht.launch(SamsungErinnerungen.RECHT) else starten()
+            }
+        }
+    }
+    ergebnis?.let { text ->
+        val p = LocalPalette.current
+        AlertDialog(
+            onDismissRequest = { ergebnis = null },
+            title = { Punkt("ERGEBNIS", 18.sp) },
+            text = { Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) { Mono(text, p.textDim, 11.sp) } },
+            confirmButton = {
+                TextButton(onClick = { zwischenablage.setText(AnnotatedString(text)); ergebnis = null }) {
+                    Text("KOPIEREN", fontFamily = Schrift.mono, color = p.akzent, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = { TextButton(onClick = { ergebnis = null }) { Text("SCHLIESSEN", fontFamily = Schrift.mono, color = p.textDim) } },
+            containerColor = p.panel, shape = RUND,
+        )
     }
 }

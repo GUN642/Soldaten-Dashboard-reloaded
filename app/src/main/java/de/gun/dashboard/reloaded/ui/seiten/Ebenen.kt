@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.6.2" to listOf(
+        "Neu (Test): Kalender-Einstellungen › „Samsung Erinnerungen prüfen“ – zeigt, ob die Samsung-Erinnerungen-App ihre Daten für andere Apps freigibt. Grundlage für eine spätere Anzeige im Kalender.",
+    ),
     "1.6.1" to listOf(
         "Fix: Erinnerungen an Termine kommen jetzt zur richtigen Zeit, wenn der Termin oder das Gerät in einer anderen Zeitzone liegt (Termin 9 Uhr Los Angeles erinnert um 8:45 dort bzw. 16:45 in Deutschland).",
         "Nach einem Zeitzonenwechsel des Geräts (z. B. nach der Landung) werden die Erinnerungen automatisch neu geplant.",
