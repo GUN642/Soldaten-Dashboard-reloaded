@@ -70,6 +70,7 @@ private fun oeffnen(ziel: String): Action =
 /** Alle Widgets der App neu zeichnen. */
 suspend fun alleWidgetsAktualisieren(ctx: Context) {
     try { AgendaWidget().updateAll(ctx) } catch (e: Exception) { }
+    try { KachelWidget().updateAll(ctx) } catch (e: Exception) { }
     try { KennzahlenWidget().updateAll(ctx) } catch (e: Exception) { }
     try { WetterWidget().updateAll(ctx) } catch (e: Exception) { }
 }

@@ -192,6 +192,21 @@ class LogikTest {
         assertEquals("17:00 (09:00 " + Zeitzonen.name("America/Los_Angeles") + ")", de.gun.dashboard.reloaded.erinnerung.terminBeginnText(laTermin, Zeitzonen.DEUTSCHLAND))
         assertEquals("09:00", de.gun.dashboard.reloaded.erinnerung.terminBeginnText(laTermin, la))
     }
+    @Test fun kachelWidget() {
+        val z = listOf(
+            de.gun.dashboard.reloaded.widget.WidgetZeile("tag", "Heute, 10. Nov"),
+            de.gun.dashboard.reloaded.widget.WidgetZeile("aufgabe", "☐ Tankabrechnung", "08:00", ziel = "todo"),
+            de.gun.dashboard.reloaded.widget.WidgetZeile("termin", "YouTube Call", "11:00|12:00", ziel = "termin"),
+            de.gun.dashboard.reloaded.widget.WidgetZeile("tag", "Morgen, 11. Nov"),
+            de.gun.dashboard.reloaded.widget.WidgetZeile("termin", "Urlaub", "", ziel = "termin"),
+        )
+        val k = de.gun.dashboard.reloaded.widget.KachelWidget.kachelnBilden(z, endzeit = true)
+        assertEquals(3, k.size)
+        assertEquals(de.gun.dashboard.reloaded.widget.Kachel("08:00", "Tankabrechnung", "todo"), k[0])
+        assertEquals("11:00–12:00", k[1].zeit)
+        assertEquals("Morgen · ganztägig", k[2].zeit)
+        assertEquals("11:00", de.gun.dashboard.reloaded.widget.KachelWidget.kachelnBilden(z, endzeit = false)[1].zeit)
+    }
     @Test fun uebertragung() {
         assertEquals(3_600_000L, dauerMs("P3600S"))
         assertEquals(5_400_000L, dauerMs("PT1H30M"))

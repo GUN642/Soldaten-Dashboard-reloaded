@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.7.0" to listOf(
+        "Neu: Widget „Dashboard Termine (Kacheln)“ – Termine und fällige Aufgaben als Kacheln in zwei Spalten, mit rotem „+“ zum direkten Anlegen eines Termins. Nutzt die Widget-Einstellungen (Tage, Aufgaben, Endzeit, Hell/Dunkel, Deckkraft).",
+    ),
     "1.6.2" to listOf(
         "Neu (Test): Kalender-Einstellungen › „Samsung Erinnerungen prüfen“ – zeigt, ob die Samsung-Erinnerungen-App ihre Daten für andere Apps freigibt. Grundlage für eine spätere Anzeige im Kalender.",
     ),

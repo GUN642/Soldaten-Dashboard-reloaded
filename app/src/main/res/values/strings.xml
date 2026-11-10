@@ -11,6 +11,8 @@
     <string name="kurz_kalender_lang">Kalender öffnen</string>
     <string name="kurz_suche">Suchen</string>
     <string name="kurz_suche_lang">Alles durchsuchen</string>
+    <string name="widget_kacheln_name">Dashboard Termine (Kacheln)</string>
+    <string name="widget_kacheln_beschreibung">Termine als Kacheln mit Schnellanlage</string>
     <string name="widget_kennzahlen_name">Dashboard Kennzahlen</string>
     <string name="widget_kennzahlen_beschreibung">Resturlaub, Mehrarbeit und Fristen</string>
     <string name="widget_wetter_name">Dashboard Wetter</string>
