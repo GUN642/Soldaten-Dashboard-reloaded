@@ -14,8 +14,7 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
-import androidx.glance.appwidget.lazy.GridCells
-import androidx.glance.appwidget.lazy.LazyVerticalGrid
+import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -45,10 +44,10 @@ import de.gun.dashboard.reloaded.logik.WOCHENTAGE
 import de.gun.dashboard.reloaded.logik.kalenderwoche
 import java.time.LocalDate
 
-/** Eine Kachel: Zeitangabe (mit Tag, falls nicht heute) und Titel. */
+/** Eine Kachel: Uhrzeit und Titel; ziel "tag" kennzeichnet eine Tagesüberschrift. */
 data class Kachel(val zeit: String, val titel: String, val ziel: String)
 
-/** Termine als Kacheln in zwei Spalten – im Stil der VOID-Favoriten. */
+/** Termine als kompakte Kacheln untereinander – im Stil der VOID-Favoriten. */
 class KachelWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -67,13 +66,12 @@ class KachelWidget : GlanceAppWidget() {
     }
 
     companion object {
-        /** Aus den Agenda-Zeilen: Tagesüberschriften wandern in die Zeitangabe der Kacheln. */
+        /** Aus den Agenda-Zeilen; „Heute“ bekommt keine eigene Überschrift. */
         fun kachelnBilden(zeilen: List<WidgetZeile>, endzeit: Boolean = Speicher.aktuell.widget.endzeit): List<Kachel> {
-            var tag = ""
             val aus = mutableListOf<Kachel>()
             for (z in zeilen) {
                 if (z.art == "tag") {
-                    tag = z.titel.substringBefore(",").let { if (it == "Heute") "" else it }
+                    if (!z.titel.startsWith("Heute")) aus += Kachel("", z.titel + if (z.unter.isNotEmpty()) " · " + z.unter else "", "tag")
                     continue
                 }
                 val teile = z.zeit.split("|")
@@ -82,7 +80,7 @@ class KachelWidget : GlanceAppWidget() {
                     endzeit && teile.size > 1 -> teile[0] + "–" + teile[1]
                     else -> teile[0]
                 }
-                aus += Kachel(if (tag.isEmpty()) uhr else "$tag · $uhr", z.titel.removePrefix("☐ "), z.ziel)
+                aus += Kachel(uhr, z.titel.removePrefix("☐ "), z.ziel)
             }
             return aus
         }
@@ -101,10 +99,10 @@ private fun KachelInhalt(kacheln: List<Kachel>, hell: Boolean, deck: Float, heut
     val leise = if (hell) Color(0xFF6A6A6A) else Color(0xFF9B9B9B)
     val rot = Color(0xFFD71921)
 
-    Column(GlanceModifier.fillMaxSize().background(hg).cornerRadius(28.dp).padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)) {
+    Column(GlanceModifier.fillMaxSize().background(hg).cornerRadius(26.dp).padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp)) {
         Row(GlanceModifier.fillMaxWidth().clickable(appAktion("kalender")), verticalAlignment = Alignment.CenterVertically) {
-            Text("TERMINE", style = TextStyle(color = ColorProvider(text), fontSize = 26.sp, fontWeight = FontWeight.Bold))
-            Text(".", style = TextStyle(color = ColorProvider(rot), fontSize = 26.sp, fontWeight = FontWeight.Bold))
+            Text("TERMINE", style = TextStyle(color = ColorProvider(text), fontSize = 21.sp, fontWeight = FontWeight.Bold))
+            Text(".", style = TextStyle(color = ColorProvider(rot), fontSize = 21.sp, fontWeight = FontWeight.Bold))
             Spacer(GlanceModifier.width(10.dp))
             Text(
                 WOCHENTAGE[heute.dayOfWeek.value - 1].uppercase() + " " + heute.dayOfMonth + ". " +
@@ -113,40 +111,46 @@ private fun KachelInhalt(kacheln: List<Kachel>, hell: Boolean, deck: Float, heut
                 modifier = GlanceModifier.defaultWeight()
             )
             Box(
-                GlanceModifier.size(46.dp).cornerRadius(23.dp).background(rot).clickable(appAktion("neuerTermin")),
+                GlanceModifier.size(38.dp).cornerRadius(19.dp).background(rot).clickable(appAktion("neuerTermin")),
                 contentAlignment = Alignment.Center
             ) {
-                Text("+", style = TextStyle(color = ColorProvider(Color.White), fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center))
+                Text("+", style = TextStyle(color = ColorProvider(Color.White), fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center))
             }
         }
-        Spacer(GlanceModifier.height(10.dp))
+        Spacer(GlanceModifier.height(8.dp))
         if (kacheln.isEmpty()) {
-            Box(GlanceModifier.fillMaxWidth().cornerRadius(18.dp).background(kachelHg).padding(14.dp).clickable(appAktion("kalender"))) {
-                Text("Keine Termine.", style = TextStyle(color = ColorProvider(leise), fontSize = 14.sp))
+            Box(GlanceModifier.fillMaxWidth().cornerRadius(14.dp).background(kachelHg).padding(horizontal = 12.dp, vertical = 9.dp).clickable(appAktion("kalender"))) {
+                Text("Keine Termine.", style = TextStyle(color = ColorProvider(leise), fontSize = 13.sp))
             }
         } else {
-            LazyVerticalGrid(GridCells.Fixed(2), GlanceModifier.fillMaxSize()) {
-                items(kacheln) { k -> KachelAnzeigen(k, kachelHg, text, leise, rot) }
+            LazyColumn(GlanceModifier.fillMaxSize()) {
+                items(kacheln) { k -> KachelAnzeigen(k, kachelHg, text, leise, rot, endzeit) }
             }
         }
     }
 }
 
 @Composable
-private fun KachelAnzeigen(k: Kachel, hg: Color, text: Color, leise: Color, rot: Color) {
-    // Außenabstand über eine umschließende Box, da Glance kein Grid-Spacing kennt
-    Box(GlanceModifier.fillMaxWidth().padding(end = 6.dp, bottom = 6.dp)) {
+private fun KachelAnzeigen(k: Kachel, hg: Color, text: Color, leise: Color, rot: Color, endzeit: Boolean) {
+    if (k.ziel == "tag") {
+        Text(
+            k.titel.uppercase(), maxLines = 1, modifier = GlanceModifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
+            style = TextStyle(color = ColorProvider(leise), fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+        )
+        return
+    }
+    // Abstand zwischen den Kacheln über eine umschließende Box
+    Box(GlanceModifier.fillMaxWidth().padding(bottom = 4.dp)) {
         Row(
-            GlanceModifier.fillMaxWidth().height(64.dp).cornerRadius(18.dp).background(hg).padding(horizontal = 12.dp)
+            GlanceModifier.fillMaxWidth().height(34.dp).cornerRadius(12.dp).background(hg).padding(horizontal = 10.dp)
                 .clickable(appAktion(if (k.ziel == "todo") "todo" else "kalender")),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("●", style = TextStyle(color = ColorProvider(rot), fontSize = 9.sp))
-            Spacer(GlanceModifier.width(9.dp))
-            Column {
-                Text(k.zeit, style = TextStyle(color = ColorProvider(leise), fontSize = 11.sp, fontFamily = FontFamily.Monospace), maxLines = 1)
-                Text(k.titel, style = TextStyle(color = ColorProvider(text), fontSize = 15.sp), maxLines = 1)
-            }
+            Text("●", style = TextStyle(color = ColorProvider(rot), fontSize = 8.sp))
+            Spacer(GlanceModifier.width(8.dp))
+            Text(k.zeit, style = TextStyle(color = ColorProvider(leise), fontSize = 11.sp, fontFamily = FontFamily.Monospace),
+                maxLines = 1, modifier = GlanceModifier.width(if (endzeit) 82.dp else 46.dp))
+            Text(k.titel, style = TextStyle(color = ColorProvider(text), fontSize = 14.sp), maxLines = 1)
         }
     }
 }

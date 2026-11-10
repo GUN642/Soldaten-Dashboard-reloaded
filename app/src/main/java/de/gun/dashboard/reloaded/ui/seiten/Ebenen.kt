@@ -266,6 +266,9 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.7.1" to listOf(
+        "Kachel-Widget: Termine jetzt untereinander als schmale Zeilen (Uhrzeit · Titel), kompakterer Kopf; weitere Tage mit kleiner Tagesüberschrift.",
+    ),
     "1.7.0" to listOf(
         "Neu: Widget „Dashboard Termine (Kacheln)“ – Termine und fällige Aufgaben als Kacheln in zwei Spalten, mit rotem „+“ zum direkten Anlegen eines Termins. Nutzt die Widget-Einstellungen (Tage, Aufgaben, Endzeit, Hell/Dunkel, Deckkraft).",
     ),

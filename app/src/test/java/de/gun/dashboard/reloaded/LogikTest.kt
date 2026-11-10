@@ -201,10 +201,12 @@ class LogikTest {
             de.gun.dashboard.reloaded.widget.WidgetZeile("termin", "Urlaub", "", ziel = "termin"),
         )
         val k = de.gun.dashboard.reloaded.widget.KachelWidget.kachelnBilden(z, endzeit = true)
-        assertEquals(3, k.size)
+        // „Heute“ ohne Überschrift, „Morgen“ als eigene Zeile
+        assertEquals(4, k.size)
         assertEquals(de.gun.dashboard.reloaded.widget.Kachel("08:00", "Tankabrechnung", "todo"), k[0])
         assertEquals("11:00–12:00", k[1].zeit)
-        assertEquals("Morgen · ganztägig", k[2].zeit)
+        assertEquals(de.gun.dashboard.reloaded.widget.Kachel("", "Morgen, 11. Nov", "tag"), k[2])
+        assertEquals("ganztägig", k[3].zeit)
         assertEquals("11:00", de.gun.dashboard.reloaded.widget.KachelWidget.kachelnBilden(z, endzeit = false)[1].zeit)
     }
     @Test fun uebertragung() {
