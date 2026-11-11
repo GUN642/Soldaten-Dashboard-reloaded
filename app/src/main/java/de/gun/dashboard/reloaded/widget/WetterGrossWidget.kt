@@ -64,7 +64,7 @@ class WetterGrossWidget : GlanceAppWidget() {
         val quelle = wetterQuelle(w.wetterQuelle, dash.quelle, dash.wetterUrl)
         if (quelle == "meteoblue") {
             try { MeteoblueBild.aktualisieren(context, dash.wetterUrl) } catch (e: Exception) { }
-            val bild = MeteoblueBild.gespeichert(context, dash.wetterUrl)
+            val bild = MeteoblueBild.gespeichert(context, dash.wetterUrl, w.meteoblueKuerzen ?: 0)
             provideContent { MeteoblueInhalt(bild, hell, deck) }
         } else {
             val wetter: Wetter? = try { WetterDienst.laden(dash.ort, false) } catch (e: Exception) { null }

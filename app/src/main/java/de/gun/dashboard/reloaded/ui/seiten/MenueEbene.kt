@@ -1,5 +1,10 @@
 package de.gun.dashboard.reloaded.ui.seiten
 
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.runtime.produceState
+import androidx.compose.foundation.Image
 import de.gun.dashboard.reloaded.logik.WOCHENTAGE
 import de.gun.dashboard.reloaded.erinnerung.Tagesueberblick
 import de.gun.dashboard.reloaded.netz.UpdateLader
@@ -306,6 +311,9 @@ fun MenueEbene() {
                         Speicher.aendern { it.copy(widget = it.widget.copy(wetterQuelle = q)) }
                     }
                     if (d.dashboard.wetterUrl.isBlank()) Hinweis("Für meteoblue zuerst im Reiter Heute › Wetter › ⚙ die meteoblue-Adresse eintragen.")
+                    else if (de.gun.dashboard.reloaded.widget.WetterGrossWidget.wetterQuelle(d.widget.wetterQuelle, d.dashboard.quelle, d.dashboard.wetterUrl) == "meteoblue") {
+                        MeteoblueKuerzen(d.dashboard.wetterUrl, d.widget.meteoblueKuerzen ?: 0)
+                    }
                     Hinweis("Hinzufügen: auf dem Startbildschirm lange drücken → Widgets → Dashboard Reloaded.")
                 }
             }
@@ -405,4 +413,26 @@ private fun TagesueberblickEinstellungen() {
         )
     }
     if (status.isNotBlank()) Hinweis(status)
+}
+
+
+/** Regler: meteoblue im Widget unten abschneiden, mit Vorschau des zuletzt aufgenommenen Bildes. */
+@Composable
+private fun MeteoblueKuerzen(url: String, gespeichert: Int) {
+    val ctx = LocalContext.current
+    var prozent by remember(gespeichert) { mutableStateOf(gespeichert.toFloat()) }
+    val bild by produceState<android.graphics.Bitmap?>(null, url) {
+        value = withContext(Dispatchers.IO) { de.gun.dashboard.reloaded.widget.MeteoblueBild.gespeichert(ctx, url)?.first }
+    }
+    Abstand(8.dp)
+    Etikett("meteoblue unten abschneiden: ${prozent.toInt()} %")
+    Regler(prozent, 0f..60f, 59, { prozent = it }) {
+        Speicher.aendern { it.copy(widget = it.widget.copy(meteoblueKuerzen = prozent.toInt())) }
+    }
+    val b = bild
+    if (b == null) Hinweis("Eine Vorschau erscheint, sobald das Widget meteoblue einmal geladen hat.")
+    else {
+        val teil = remember(b, prozent.toInt()) { de.gun.dashboard.reloaded.widget.MeteoblueBild.zuschneiden(b, prozent.toInt()).asImageBitmap() }
+        Image(teil, "Vorschau", Modifier.fillMaxWidth().heightIn(max = 360.dp).clip(RUND_KLEIN), contentScale = ContentScale.Fit)
+    }
 }

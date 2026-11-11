@@ -335,6 +335,8 @@ data class WidgetEinstellungen(
     val endzeit: FBool = false,
     /** Wetter-Widget (skalierbar): "app" wie im Reiter Heute, sonst "openmeteo" oder "meteoblue". */
     val wetterQuelle: FText = "app",
+    /** meteoblue im Widget: so viel Prozent unten abschneiden (z. B. die Windgrafik). */
+    val meteoblueKuerzen: FGanzN = 0,
 )
 
 @Serializable

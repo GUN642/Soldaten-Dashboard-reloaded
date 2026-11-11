@@ -26,13 +26,25 @@ object MeteoblueBild {
     private fun datei(ctx: Context) = File(ctx.filesDir, DATEI)
     private fun urlDatei(ctx: Context) = File(ctx.filesDir, "$DATEI.url")
 
-    /** Zuletzt aufgenommenes Bild samt Zeitpunkt – nur, wenn es zur eingestellten Adresse gehört. */
-    fun gespeichert(ctx: Context, url: String): Pair<Bitmap, Long>? {
+    /**
+     * Zuletzt aufgenommenes Bild samt Zeitpunkt – nur, wenn es zur eingestellten Adresse gehört.
+     * [kuerzen]: so viel Prozent unten abschneiden.
+     */
+    fun gespeichert(ctx: Context, url: String, kuerzen: Int = 0): Pair<Bitmap, Long>? {
         val f = datei(ctx)
         if (!f.exists() || runCatching { urlDatei(ctx).readText() }.getOrNull() != url) return null
         val b = runCatching { BitmapFactory.decodeFile(f.path) }.getOrNull() ?: return null
-        return b to f.lastModified()
+        return zuschneiden(b, kuerzen) to f.lastModified()
     }
+
+    fun zuschneiden(b: Bitmap, kuerzen: Int): Bitmap {
+        val h = hoeheNachKuerzen(b.height, kuerzen)
+        return if (h >= b.height) b else Bitmap.createBitmap(b, 0, 0, b.width, h)
+    }
+
+    /** Verbleibende Höhe in Pixeln (höchstens 90 % werden abgeschnitten). */
+    fun hoeheNachKuerzen(hoehe: Int, kuerzen: Int): Int =
+        (hoehe * (100 - kuerzen.coerceIn(0, 90)) / 100).coerceAtLeast(1)
 
     /** Neu aufnehmen, wenn das Bild fehlt oder älter als 30 Minuten ist. */
     suspend fun aktualisieren(ctx: Context, url: String) {

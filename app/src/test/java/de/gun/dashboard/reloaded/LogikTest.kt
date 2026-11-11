@@ -221,6 +221,9 @@ class LogikTest {
         assertEquals(6 to 0, W.aufteilung(androidx.compose.ui.unit.Dp(330f), androidx.compose.ui.unit.Dp(160f)))
         val gross = W.aufteilung(androidx.compose.ui.unit.Dp(330f), androidx.compose.ui.unit.Dp(320f))
         assertEquals(6, gross.first); assertTrue(gross.second in 5..7)
+        assertEquals(620, de.gun.dashboard.reloaded.widget.MeteoblueBild.hoeheNachKuerzen(1000, 38))
+        assertEquals(1000, de.gun.dashboard.reloaded.widget.MeteoblueBild.hoeheNachKuerzen(1000, 0))
+        assertEquals(100, de.gun.dashboard.reloaded.widget.MeteoblueBild.hoeheNachKuerzen(1000, 99))
     }
     @Test fun uebertragung() {
         assertEquals(3_600_000L, dauerMs("P3600S"))
