@@ -266,6 +266,10 @@ fun EinrichtungEbene(rechteAnfragen: () -> Unit) {
 // ================================================================== Changelog
 
 private val CHANGELOG = listOf(
+    "1.8.0" to listOf(
+        "Neu: Widget „Dashboard Wetter (skalierbar)“ – frei in der Größe. Einfaches Wetter zeigt je nach Größe zusätzlich die nächsten Stunden und die kommenden Tage; meteoblue erscheint als Bild der eingestellten meteoblue-Ansicht (alle 30 Minuten neu).",
+        "Menü › Widget: Quelle des Wetter-Widgets wählbar (wie in der App, Einfach, meteoblue).",
+    ),
     "1.7.1" to listOf(
         "Kachel-Widget: Termine jetzt untereinander als schmale Zeilen (Uhrzeit · Titel), kompakterer Kopf; weitere Tage mit kleiner Tagesüberschrift.",
     ),

@@ -73,6 +73,7 @@ suspend fun alleWidgetsAktualisieren(ctx: Context) {
     try { KachelWidget().updateAll(ctx) } catch (e: Exception) { }
     try { KennzahlenWidget().updateAll(ctx) } catch (e: Exception) { }
     try { WetterWidget().updateAll(ctx) } catch (e: Exception) { }
+    try { WetterGrossWidget().updateAll(ctx) } catch (e: Exception) { }
 }
 
 // ================================================================== Kennzahlen

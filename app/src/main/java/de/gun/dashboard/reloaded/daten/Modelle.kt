@@ -333,6 +333,8 @@ data class WidgetEinstellungen(
     val aufgaben: FBool = false,
     val tage: FGanzN = 1,
     val endzeit: FBool = false,
+    /** Wetter-Widget (skalierbar): "app" wie im Reiter Heute, sonst "openmeteo" oder "meteoblue". */
+    val wetterQuelle: FText = "app",
 )
 
 @Serializable

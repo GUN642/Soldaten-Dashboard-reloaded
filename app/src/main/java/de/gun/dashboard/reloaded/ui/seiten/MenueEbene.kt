@@ -300,6 +300,12 @@ fun MenueEbene() {
                         Pille("Aufgaben mit anzeigen", d.widget.aufgaben) { Speicher.aendern { it.copy(widget = it.widget.copy(aufgaben = !it.widget.aufgaben)) } }
                         Pille("Endzeit mit anzeigen", d.widget.endzeit) { Speicher.aendern { it.copy(widget = it.widget.copy(endzeit = !it.widget.endzeit)) } }
                     }
+                    Abstand(8.dp)
+                    Etikett("Wetter-Widget (skalierbar)")
+                    Segmente(listOf("app" to "Wie in der App", "openmeteo" to "Einfach", "meteoblue" to "meteoblue"), d.widget.wetterQuelle) { q ->
+                        Speicher.aendern { it.copy(widget = it.widget.copy(wetterQuelle = q)) }
+                    }
+                    if (d.dashboard.wetterUrl.isBlank()) Hinweis("Für meteoblue zuerst im Reiter Heute › Wetter › ⚙ die meteoblue-Adresse eintragen.")
                     Hinweis("Hinzufügen: auf dem Startbildschirm lange drücken → Widgets → Dashboard Reloaded.")
                 }
             }

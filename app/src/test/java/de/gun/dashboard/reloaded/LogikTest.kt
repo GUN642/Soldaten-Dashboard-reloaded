@@ -209,6 +209,19 @@ class LogikTest {
         assertEquals("ganztägig", k[3].zeit)
         assertEquals("11:00", de.gun.dashboard.reloaded.widget.KachelWidget.kachelnBilden(z, endzeit = false)[1].zeit)
     }
+    @Test fun wetterWidget() {
+        val W = de.gun.dashboard.reloaded.widget.WetterGrossWidget
+        assertEquals("openmeteo", W.wetterQuelle("app", "openmeteo", ""))
+        assertEquals("meteoblue", W.wetterQuelle("app", "meteoblue", "https://www.meteoblue.com/x"))
+        // meteoblue ohne Adresse fällt auf das einfache Wetter zurück
+        assertEquals("openmeteo", W.wetterQuelle("meteoblue", "openmeteo", ""))
+        assertEquals("openmeteo", W.wetterQuelle("openmeteo", "meteoblue", "https://www.meteoblue.com/x"))
+        // klein: nur Kopf; mittel: Stunden; groß: Stunden und Tage
+        assertEquals(0 to 0, W.aufteilung(androidx.compose.ui.unit.Dp(180f), androidx.compose.ui.unit.Dp(90f)))
+        assertEquals(6 to 0, W.aufteilung(androidx.compose.ui.unit.Dp(330f), androidx.compose.ui.unit.Dp(160f)))
+        val gross = W.aufteilung(androidx.compose.ui.unit.Dp(330f), androidx.compose.ui.unit.Dp(320f))
+        assertEquals(6, gross.first); assertTrue(gross.second in 5..7)
+    }
     @Test fun uebertragung() {
         assertEquals(3_600_000L, dauerMs("P3600S"))
         assertEquals(5_400_000L, dauerMs("PT1H30M"))

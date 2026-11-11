@@ -13,6 +13,8 @@
     <string name="kurz_suche_lang">Alles durchsuchen</string>
     <string name="widget_kacheln_name">Dashboard Termine (Kacheln)</string>
     <string name="widget_kacheln_beschreibung">Termine als Kacheln mit Schnellanlage</string>
+    <string name="widget_wetter_gross_name">Dashboard Wetter (skalierbar)</string>
+    <string name="widget_wetter_gross_beschreibung">Einfaches Wetter oder meteoblue, frei in der Größe</string>
     <string name="widget_kennzahlen_name">Dashboard Kennzahlen</string>
     <string name="widget_kennzahlen_beschreibung">Resturlaub, Mehrarbeit und Fristen</string>
     <string name="widget_wetter_name">Dashboard Wetter</string>
